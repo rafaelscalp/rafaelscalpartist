@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(open \"/Users/rafaeloropeza/Desktop/Scalp/Pagina web/index.html\")",
+      "Bash(sips -s format jpeg \"Resultado.HEIC\" --out \"resultado.jpg\")",
+      "Bash(ffprobe -v quiet -show_entries format=duration -of csv=p=0 \"diseño.MOV\")",
+      "Bash(brew list *)",
+      "Bash(qlmanage -t -s 1200 -o . \"diseño.MOV\")",
+      "Bash(sips -s format jpeg \"diseño.MOV.png\" --out \"diseno.jpg\")",
+      "Bash(sips -r -90 \"/Users/rafaeloropeza/Desktop/Scalp/Pagina web/imagenes/3 pasos/evaluacion.JPG\")",
+      "Bash(python3 -m http.server 8080)",
+      "Bash(brew install *)",
+      "Bash(mdimport -d2 \"/Users/rafaeloropeza/Desktop/Scalp/Capacitaciones/Guia definitiva/Guia curso scalp.pdf\")",
+      "Bash(grep -v \"^[^a-zA-ZáéíóúñÁÉÍÓÚÑ]*$\")",
+      "Bash(grep -E \".{10,}\")",
+      "Bash(sips -g pixelWidth -g pixelHeight \"/Users/rafaeloropeza/Desktop/Scalp/Pagina web/imagenes/LOGO /Logo Blanco.png\")",
+      "Bash(sips -g pixelWidth -g pixelHeight \"/Users/rafaeloropeza/Desktop/Scalp/Pagina web/imagenes/LOGO /Logotipo blanco.png\")",
+      "Bash(ffmpeg -version)",
+      "Bash(ls /opt/homebrew/bin/ffmpeg /usr/local/bin/ffmpeg 2>&1)",
+      "Bash(/opt/homebrew/bin/ffmpeg -version)",
+      "Bash(/opt/homebrew/bin/ffmpeg -i \"/Users/rafaeloropeza/Desktop/Scalp/Pagina web/imagenes/cabecera/cabecera.mov\" -vcodec h264 -acodec aac -crf 28 -preset fast \"/Users/rafaeloropeza/Desktop/Scalp/Pagina web/imagenes/cabecera/cabecera.mp4\")",
+      "Bash(mkdir -p \"/Users/rafaeloropeza/Desktop/Scalp/Pagina web/.claude\")",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(kill 6319)",
+      "Bash(/usr/bin/python3 -m http.server 8080)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/)"
+    ]
+  }
+}
