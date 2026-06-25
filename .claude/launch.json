@@ -6,6 +6,13 @@
       "runtimeExecutable": "/usr/bin/python3",
       "runtimeArgs": ["-m", "http.server", "8080", "-d", "/Users/rafaeloropeza/Desktop/Scalp/Pagina web"],
       "port": 8080
+    },
+    {
+      "name": "crm",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["crm/server.js"],
+      "cwd": "/Users/rafaeloropeza/Desktop/Scalp/Pagina web",
+      "port": 8080
     }
   ]
 }

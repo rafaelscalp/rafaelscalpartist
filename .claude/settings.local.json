@@ -23,7 +23,27 @@
       "mcp__Claude_Preview__preview_start",
       "Bash(kill 6319)",
       "Bash(/usr/bin/python3 -m http.server 8080)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/)",
+      "Bash(npm install *)",
+      "Bash(ls /usr/local/bin/node /opt/homebrew/bin/node ~/.nvm/versions/node/*/bin/node 2>/dev/null | head -5)",
+      "Bash(find /usr /opt /Users/rafaeloropeza -name \"node\" -type f 2>/dev/null | head -5)",
+      "Bash(/usr/local/nvm/nvm.sh)",
+      "Bash(mdfind -name \"node\" -onlyin /usr/local)",
+      "Bash(mdfind -name \"node\" -onlyin /opt)",
+      "Bash(mdfind \"kMDItemFSName == 'node' && kMDItemContentType == 'public.unix-executable'\")",
+      "Bash(mdfind \"kMDItemFSName == 'npm'\")",
+      "Bash(mkdir -p \"/Users/rafaeloropeza/Desktop/Scalp/Pagina web/crm/.claude\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(gh pr create --title 'CRM interno — Fase 1: Pipeline, Dashboard y Ficha de clientes' --body ' *)",
+      "Bash(find /usr/local/bin /opt/homebrew/bin ~/Library -name \"gh\" 2>/dev/null | head -3)",
+      "Bash(/usr/local/bin/npm install *)",
+      "Bash(kill 11168)",
+      "Bash(sqlite3 crm.sqlite 'SELECT id, name, phone, email, origin, campaign, adset, ad_name, stage, temperature, budget, next_touch, initial_message, last_contact_at, next_retoque, loss_reason, notes, created_at FROM clients WHERE name='\\\\''Carlos Mendoza'\\\\'';')",
+      "Bash(git commit -m 'Fix validación teléfono: remover required HTML para mostrar toast JS *)",
+      "Bash(pkill -f \"node crm/server.js\")",
+      "Bash(mv \"/Users/rafaeloropeza/Desktop/Scalp/Pagina web/imagenes/LOGO \" \"/Users/rafaeloropeza/Desktop/Scalp/Pagina web/imagenes/LOGO\" && ls \"/Users/rafaeloropeza/Desktop/Scalp/Pagina web/imagenes/LOGO\")"
     ]
   }
 }
