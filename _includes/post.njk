@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ title }} | Rafael Scalp Artist</title>
+<meta name="description" content="{{ description }}">
+<meta property="og:title" content="{{ title }} | Rafael Scalp Artist">
+<meta property="og:description" content="{{ description }}">
+{% if image %}<meta property="og:image" content="{{ image }}">{% endif %}
+<link rel="canonical" href="https://www.rafaelscalpartist.com/blog/{{ page.fileSlug }}/">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; font-size: 16px; }
+  body { font-family: 'Arial', sans-serif; background: #000; color: #fff; line-height: 1.7; }
+  :root { --verde: #57C84D; }
+
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 20px 24px;
+    background: rgba(0,0,0,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-logo {
+    font-family: 'Arial Black', sans-serif; font-weight: 900;
+    font-size: 15px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: #fff; text-decoration: none;
+  }
+  .nav-back {
+    font-size: 13px; color: rgba(255,255,255,0.5);
+    text-decoration: none; letter-spacing: 0.05em;
+    transition: color 0.2s;
+  }
+  .nav-back:hover { color: #fff; }
+
+  .post-hero {
+    padding: 140px 24px 64px;
+    max-width: 760px; margin: 0 auto;
+  }
+  .post-tag {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--verde); margin-bottom: 20px;
+    display: block;
+  }
+  .post-tag::before { content: '— '; }
+  .post-title {
+    font-family: 'Arial Black', sans-serif; font-weight: 900;
+    font-size: clamp(2rem, 5vw, 3.5rem); line-height: 1.05;
+    letter-spacing: -0.02em; margin-bottom: 20px;
+  }
+  .post-desc {
+    font-size: 18px; color: rgba(255,255,255,0.6);
+    line-height: 1.6; margin-bottom: 32px;
+  }
+  .post-meta {
+    font-size: 12px; color: rgba(255,255,255,0.3);
+    letter-spacing: 0.08em; text-transform: uppercase;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-top: 24px;
+  }
+  .post-cover {
+    width: 100%; max-width: 760px; margin: 0 auto 64px;
+    padding: 0 24px;
+  }
+  .post-cover img {
+    width: 100%; border-radius: 4px;
+    aspect-ratio: 16/9; object-fit: cover;
+  }
+  .post-body {
+    max-width: 680px; margin: 0 auto;
+    padding: 0 24px 96px;
+    font-size: 17px; line-height: 1.8;
+    color: rgba(255,255,255,0.85);
+  }
+  .post-body h2 {
+    font-family: 'Arial Black', sans-serif; font-weight: 900;
+    font-size: clamp(1.4rem, 3vw, 2rem); margin: 48px 0 16px;
+    color: #fff; letter-spacing: -0.02em;
+  }
+  .post-body h3 {
+    font-size: 1.2rem; font-weight: 700;
+    margin: 32px 0 12px; color: #fff;
+  }
+  .post-body p { margin-bottom: 24px; }
+  .post-body ul, .post-body ol {
+    padding-left: 24px; margin-bottom: 24px;
+  }
+  .post-body li { margin-bottom: 8px; }
+  .post-body strong { color: #fff; }
+  .post-body a { color: var(--verde); }
+
+  .post-cta {
+    background: #0d0d0d;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding: 64px 24px; text-align: center;
+  }
+  .post-cta h2 {
+    font-family: 'Arial Black', sans-serif; font-weight: 900;
+    font-size: clamp(1.5rem, 3vw, 2.2rem);
+    margin-bottom: 16px; letter-spacing: -0.02em;
+  }
+  .post-cta p { color: rgba(255,255,255,0.5); margin-bottom: 32px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 16px 32px; border-radius: 4px; font-size: 15px;
+    font-weight: 700; letter-spacing: 0.05em; text-decoration: none;
+    background: var(--verde); color: #000;
+  }
+
+  footer {
+    padding: 32px 24px; text-align: center;
+    font-size: 12px; color: rgba(255,255,255,0.2);
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  footer a { color: rgba(255,255,255,0.3); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">Rafael Scalp Artist</a>
+  <a href="/blog/" class="nav-back">← Volver al blog</a>
+</nav>
+
+<div class="post-hero">
+  <span class="post-tag">Blog</span>
+  <h1 class="post-title">{{ title }}</h1>
+  {% if description %}<p class="post-desc">{{ description }}</p>{% endif %}
+  <div class="post-meta">{{ date | date: "%d/%m/%Y" }}</div>
+</div>
+
+{% if image %}
+<div class="post-cover">
+  <img src="{{ image }}" alt="{{ title }}">
+</div>
+{% endif %}
+
+<div class="post-body">
+  {{ content | safe }}
+</div>
+
+<div class="post-cta">
+  <h2>¿Querés recuperar tu imagen?</h2>
+  <p>Una consulta sin compromiso es todo lo que necesitás para empezar.</p>
+  <a href="https://wa.me/5491178861545?text=Hola%20Rafael%2C%20me%20gustar%C3%ADa%20obtener%20m%C3%A1s%20informaci%C3%B3n." class="btn" target="_blank" rel="noopener">
+    Consultá por WhatsApp
+  </a>
+</div>
+
+<footer>
+  <a href="/">Rafael Scalp Artist</a> · Micropigmentación Capilar en Buenos Aires
+</footer>
+
+</body>
+</html>

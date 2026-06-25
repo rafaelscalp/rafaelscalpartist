@@ -1,0 +1,150 @@
+---
+layout: false
+title: Blog | Rafael Scalp Artist
+permalink: /blog/
+---
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blog | Rafael Scalp Artist — Micropigmentación Capilar</title>
+<meta name="description" content="Artículos sobre micropigmentación capilar, calvicie, cuidados y todo lo que necesitás saber. Por Rafael Oropeza, especialista en SMP en Buenos Aires.">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Arial', sans-serif; background: #000; color: #fff; line-height: 1.6; }
+  :root { --verde: #57C84D; }
+
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 20px 24px;
+    background: rgba(0,0,0,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-logo {
+    font-family: 'Arial Black', sans-serif; font-weight: 900;
+    font-size: 15px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: #fff; text-decoration: none;
+  }
+  .nav-back { font-size: 13px; color: rgba(255,255,255,0.5); text-decoration: none; }
+  .nav-back:hover { color: #fff; }
+
+  .blog-hero {
+    padding: 140px 24px 64px;
+    max-width: 1080px; margin: 0 auto;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .blog-tag {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--verde);
+    margin-bottom: 16px; display: block;
+  }
+  .blog-tag::before { content: '— '; }
+  .blog-title {
+    font-family: 'Arial Black', sans-serif; font-weight: 900;
+    font-size: clamp(2rem, 5vw, 3.5rem); line-height: 1.05;
+    letter-spacing: -0.02em; margin-bottom: 16px;
+  }
+  .blog-subtitle { font-size: 17px; color: rgba(255,255,255,0.5); }
+
+  .blog-grid {
+    max-width: 1080px; margin: 0 auto;
+    padding: 64px 24px 96px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 32px;
+  }
+  .blog-empty {
+    max-width: 1080px; margin: 0 auto;
+    padding: 64px 24px; color: rgba(255,255,255,0.3);
+    font-size: 15px;
+  }
+
+  .post-card {
+    background: #0d0d0d;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 4px; overflow: hidden;
+    text-decoration: none; color: #fff;
+    display: flex; flex-direction: column;
+    transition: border-color 0.2s;
+  }
+  .post-card:hover { border-color: rgba(87,200,77,0.3); }
+  .post-card-img {
+    width: 100%; aspect-ratio: 16/9;
+    object-fit: cover; display: block;
+    background: #1a1a1a;
+  }
+  .post-card-body { padding: 24px; flex: 1; display: flex; flex-direction: column; }
+  .post-card-date {
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: rgba(255,255,255,0.3); margin-bottom: 12px;
+  }
+  .post-card-title {
+    font-family: 'Arial Black', sans-serif; font-weight: 900;
+    font-size: 1.1rem; line-height: 1.2;
+    letter-spacing: -0.01em; margin-bottom: 12px;
+  }
+  .post-card-desc {
+    font-size: 14px; color: rgba(255,255,255,0.5);
+    line-height: 1.6; flex: 1; margin-bottom: 20px;
+  }
+  .post-card-link {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--verde);
+  }
+
+  footer {
+    padding: 32px 24px; text-align: center;
+    font-size: 12px; color: rgba(255,255,255,0.2);
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  footer a { color: rgba(255,255,255,0.3); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">Rafael Scalp Artist</a>
+  <a href="/" class="nav-back">← Volver al sitio</a>
+</nav>
+
+<div class="blog-hero">
+  <span class="blog-tag">Blog</span>
+  <h1 class="blog-title">Todo sobre micropigmentación capilar</h1>
+  <p class="blog-subtitle">Artículos, guías y respuestas para que llegues informado a tu consulta.</p>
+</div>
+
+{% set posts = collections.posts %}
+{% if posts.length > 0 %}
+<div class="blog-grid">
+  {% for post in posts %}
+  <a href="{{ post.url }}" class="post-card">
+    {% if post.data.image %}
+    <img src="{{ post.data.image }}" alt="{{ post.data.title }}" class="post-card-img">
+    {% else %}
+    <div class="post-card-img"></div>
+    {% endif %}
+    <div class="post-card-body">
+      <div class="post-card-date">{{ post.date | date: "%d/%m/%Y" }}</div>
+      <div class="post-card-title">{{ post.data.title }}</div>
+      {% if post.data.description %}
+      <div class="post-card-desc">{{ post.data.description }}</div>
+      {% endif %}
+      <div class="post-card-link">Leer artículo →</div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="blog-empty">Próximamente — los primeros artículos están en camino.</div>
+{% endif %}
+
+<footer>
+  <a href="/">Rafael Scalp Artist</a> · Micropigmentación Capilar en Buenos Aires
+</footer>
+
+</body>
+</html>

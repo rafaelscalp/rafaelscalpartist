@@ -1,0 +1,21 @@
+backend:
+  name: github
+  repo: rafaelscalp/rafaelscalpartist
+  branch: main
+
+locale: 'es'
+media_folder: "imagenes/blog"
+public_folder: "/imagenes/blog"
+
+collections:
+  - name: "posts"
+    label: "Artículos"
+    folder: "blog/posts"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - {label: "Título", name: "title", widget: "string"}
+      - {label: "Fecha", name: "date", widget: "datetime", format: "YYYY-MM-DD", date_format: "DD/MM/YYYY", time_format: false}
+      - {label: "Descripción corta", name: "description", widget: "text"}
+      - {label: "Imagen de portada", name: "image", widget: "image", required: false}
+      - {label: "Contenido", name: "body", widget: "markdown"}
