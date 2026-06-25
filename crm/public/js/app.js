@@ -1,51 +1,92 @@
 // ─── APP PRINCIPAL ────────────────────────────────────────────────────────────
-// Inicialización, navegación y coordinación entre módulos.
 
-const VIEWS = ['dashboard', 'pipeline', 'clients'];
+const VIEWS = ['dashboard', 'pipeline', 'clients', 'agenda'];
 const VIEW_TITLES = {
   dashboard: 'Dashboard',
   pipeline:  'Pipeline',
   clients:   'Clientes',
+  agenda:    'Agenda',
 };
 
 let currentView = 'dashboard';
-let searchDebounced = debounce(handleGlobalSearch, 300);
+let searchDebounced = debounce(handleGlobalSearch, 250);
+let searchDropdownDebounced = debounce(runQuickSearch, 300);
 
 // ─── NAVEGACIÓN ───────────────────────────────────────────────────────────────
 
 function navigate(view) {
   if (!VIEWS.includes(view)) return;
   currentView = view;
+  closeSearchDropdown();
 
-  // Actualizar sidebar
   document.querySelectorAll('.nav-item[data-view]').forEach(el => {
     el.classList.toggle('active', el.dataset.view === view);
   });
 
-  // Mostrar view correcta
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
   document.getElementById(`view-${view}`).classList.add('active');
-
-  // Título del topbar
   document.getElementById('topbar-title').textContent = VIEW_TITLES[view] || view;
 
-  // Cargar datos de la view
   if (view === 'dashboard') loadDashboard();
   if (view === 'pipeline')  loadPipeline();
   if (view === 'clients')   loadClients();
+  if (view === 'agenda')    loadAgenda();
 }
 
-// ─── BÚSQUEDA GLOBAL ─────────────────────────────────────────────────────────
+// ─── BÚSQUEDA GLOBAL — FILTROS DE VISTA ──────────────────────────────────────
 
 function handleGlobalSearch(value) {
   const q = value.trim();
-  if (currentView === 'pipeline') {
-    filterPipeline(q);
-  } else if (currentView === 'clients') {
-    applyClientsFilters();
-  } else if (q.length > 1) {
-    navigate('clients');
+  if (q.length >= 2) {
+    searchDropdownDebounced(q);
+  } else {
+    closeSearchDropdown();
   }
+  if (currentView === 'pipeline' && !q) renderPipeline();
+  if (currentView === 'clients')  applyClientsFilters();
+}
+
+// ─── BUSCADOR DROPDOWN ────────────────────────────────────────────────────────
+
+async function runQuickSearch(q) {
+  try {
+    const results = await api.leads.quickSearch(q);
+    renderSearchDropdown(results);
+  } catch { closeSearchDropdown(); }
+}
+
+function renderSearchDropdown(results) {
+  const dd = document.getElementById('search-dropdown');
+  if (!results.length) {
+    dd.innerHTML = '<div class="search-empty">Sin resultados</div>';
+    dd.style.display = 'block';
+    return;
+  }
+  dd.innerHTML = results.map(r => `
+    <div class="search-result" onclick="selectSearchResult('${r.id}')">
+      <div class="sr-avatar">${initials(r.name)}</div>
+      <div class="sr-info">
+        <div class="sr-name">${r.name}</div>
+        <div class="sr-meta">${r.phone || ''} · ${r.origin}</div>
+      </div>
+      <div class="sr-stage">
+        ${tempBadge(r.temperature)}<br>
+        <span style="font-size:10px">${r.stage}</span>
+      </div>
+    </div>
+  `).join('');
+  dd.style.display = 'block';
+}
+
+function selectSearchResult(id) {
+  closeSearchDropdown();
+  document.getElementById('global-search').value = '';
+  openClientDetail(id);
+}
+
+function closeSearchDropdown() {
+  const dd = document.getElementById('search-dropdown');
+  if (dd) dd.style.display = 'none';
 }
 
 // ─── LIMPIAR FILTROS ──────────────────────────────────────────────────────────
@@ -66,20 +107,15 @@ function exportCSV() {
   const origin = document.getElementById('filter-origin')?.value || '';
   const from   = document.getElementById('filter-from')?.value || '';
   const to     = document.getElementById('filter-to')?.value || '';
-
   const params = {};
   if (stage) params.stage = stage;
   if (origin) params.origin = origin;
   if (from) params.from = from;
   if (to) params.to = to;
-
   const url = api.export.csvUrl(params);
   const a = document.createElement('a');
-  a.href = url;
-  a.download = '';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  a.href = url; a.download = '';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
   toast('Exportando CSV…', 'info');
 }
 
@@ -94,16 +130,31 @@ function switchDetailTabByClick(tab) {
 document.addEventListener('DOMContentLoaded', () => {
   loadDashboard();
 
-  // Búsqueda con debounce
-  document.getElementById('global-search').addEventListener('input', (e) => {
+  const searchInput = document.getElementById('global-search');
+  searchInput.addEventListener('input', (e) => {
     searchDebounced(e.target.value);
   });
+  searchInput.addEventListener('focus', (e) => {
+    if (e.target.value.trim().length >= 2) runQuickSearch(e.target.value.trim());
+  });
 
-  // Cerrar modales con Escape
+  // Cerrar dropdown al hacer clic fuera
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.search-wrapper')) closeSearchDropdown();
+    // Cerrar notas rápidas al hacer clic fuera
+    if (!e.target.closest('.kanban-card')) {
+      document.querySelectorAll('.quick-note-popup').forEach(p => p.style.display = 'none');
+    }
+  });
+
+  // Cerrar modales y dropdown con Escape
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       closeDetailModal();
       closeFormModal();
+      closeSearchDropdown();
+      document.getElementById('global-search').value = '';
+      document.querySelectorAll('.quick-note-popup').forEach(p => p.style.display = 'none');
     }
   });
 });

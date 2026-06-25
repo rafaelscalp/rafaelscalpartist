@@ -330,14 +330,23 @@ function renderSessionsPanel(c) {
     </div>
   `;
 
-  const totalPagado = sessions.filter(s => s.payment_status === 'Pagado').reduce((a, s) => a + (s.price || 0), 0);
-  const totalGeneral = sessions.reduce((a, s) => a + (s.price || 0), 0);
+  const totalPagado   = sessions.filter(s => s.payment_status === 'Pagado').reduce((a, s) => a + (s.price || 0), 0);
+  const totalPendiente = sessions.filter(s => s.payment_status !== 'Pagado').reduce((a, s) => a + (s.price || 0), 0);
 
   const resumen = sessions.length ? `
-    <div style="display:flex;gap:16px;margin-bottom:12px;font-size:13px">
-      <span>Total sesiones: <strong>${sessions.length}</strong></span>
-      <span>Cobrado: <strong style="color:var(--accent)">${fmtCurrency(totalPagado)}</strong></span>
-      ${totalGeneral > totalPagado ? `<span>Pendiente: <strong style="color:var(--danger)">${fmtCurrency(totalGeneral - totalPagado)}</strong></span>` : ''}
+    <div class="sessions-totals">
+      <div class="sessions-total-item">
+        <div class="lbl">Sesiones</div>
+        <div class="val">${sessions.length}</div>
+      </div>
+      <div class="sessions-total-item">
+        <div class="lbl">Cobrado (Pagado)</div>
+        <div class="val" style="color:var(--accent)">${fmtCurrency(totalPagado)}</div>
+      </div>
+      ${totalPendiente > 0 ? `<div class="sessions-total-item">
+        <div class="lbl">Pendiente (Señado + Pend.)</div>
+        <div class="val" style="color:var(--danger)">${fmtCurrency(totalPendiente)}</div>
+      </div>` : ''}
     </div>
   ` : '';
 
@@ -347,7 +356,7 @@ function renderSessionsPanel(c) {
     <div class="session-item">
       <div>
         <div class="session-date">Sesión #${s.session_number || '?'} — ${fmtDate(s.date)}</div>
-        <div class="session-type">${s.type}</div>
+        <div class="session-type">${s.type}${s.notes ? ` · ${s.notes}` : ''}</div>
       </div>
       <div style="text-align:right">
         <div class="session-price">${fmtCurrency(s.price)}</div>
@@ -443,6 +452,19 @@ async function addSession(clientId) {
     activateTab('sessions');
     toast('Sesión registrada', 'success');
     loadDashboard();
+
+    // Auto-sugerir fecha de retoque si el cliente es activo y no tiene una
+    if (c.stage === 'Cliente activo' && !c.next_retoque) {
+      const suggestion = await api.interactions.retoqueSuggestion(clientId);
+      if (suggestion) {
+        const ok = confirm(`¿Querés registrar la fecha estimada de retoque como ${fmtDate(suggestion)}? (3 años desde esta sesión)`);
+        if (ok) {
+          await api.leads.update(clientId, { next_retoque: suggestion });
+          toast('Fecha de retoque registrada', 'success');
+          loadDashboard();
+        }
+      }
+    }
   } catch (err) {
     toast(err.message, 'error');
   }

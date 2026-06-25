@@ -468,13 +468,13 @@ body {
   margin-top: 6px;
 }
 .kanban-card .card-actions {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  display: none;
+  display: flex;
   gap: 4px;
+  margin-top: 6px;
+  opacity: 0;
+  transition: opacity 0.15s;
 }
-.kanban-card:hover .card-actions { display: flex; }
+.kanban-card:hover .card-actions { opacity: 1; }
 
 /* Temperatura dot */
 .temp-dot {
@@ -970,6 +970,107 @@ body {
 .retoque-item:last-child { border-bottom: none; }
 .retoque-date { color: var(--accent); font-weight: 700; font-size: 12px; }
 .retoque-urgent { color: var(--warning); }
+
+/* ─── BUSCADOR GLOBAL DROPDOWN ───────────────────────────── */
+.search-wrapper { position: relative; }
+.search-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  z-index: 200;
+  overflow: hidden;
+  max-height: 360px;
+  overflow-y: auto;
+}
+.search-result {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+}
+.search-result:last-child { border-bottom: none; }
+.search-result:hover { background: var(--bg-elevated); }
+.sr-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--accent); color: #000;
+  font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.sr-info { flex: 1; min-width: 0; }
+.sr-name { font-size: 13px; font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sr-meta { font-size: 11px; color: var(--text-muted); }
+.sr-stage { font-size: 11px; color: var(--text-muted); text-align: right; white-space: nowrap; }
+.search-empty { padding: 16px; text-align: center; color: var(--text-muted); font-size: 13px; }
+
+/* ─── NOTA RÁPIDA PIPELINE ───────────────────────────────── */
+.kanban-card { position: relative; }
+.quick-note-popup {
+  position: fixed;
+  width: 220px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  padding: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+  z-index: 300;
+}
+.quick-note-popup textarea {
+  width: 100%; background: var(--bg-elevated);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  color: var(--text-primary); font-size: 12px; padding: 8px;
+  resize: none; height: 70px; font-family: inherit; box-sizing: border-box;
+}
+.quick-note-popup textarea:focus { outline: none; border-color: var(--accent); }
+.quick-note-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 6px; }
+
+/* ─── TABLA RETOQUES DASHBOARD ────────────────────────────── */
+.retoque-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.retoque-table th {
+  text-align: left; color: var(--text-muted); font-size: 10px;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  padding: 6px 10px; border-bottom: 1px solid var(--border);
+}
+.retoque-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.retoque-table tr:last-child td { border-bottom: none; }
+.retoque-table tr:hover td { background: var(--bg-elevated); cursor: pointer; }
+.urgency-badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 700; }
+.urgency-red    { background: rgba(224,85,85,0.15);  color: var(--danger); }
+.urgency-orange { background: rgba(255,165,0,0.15);  color: var(--warning); }
+.urgency-yellow { background: rgba(255,220,50,0.15); color: #f5d020; }
+
+/* ─── AGENDA SEMANAL ─────────────────────────────────────── */
+.agenda-nav { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.agenda-week-label { font-weight: 700; font-size: 14px; }
+.agenda-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+.agenda-day {
+  background: var(--bg-card); border-radius: var(--radius);
+  padding: 10px 8px; min-height: 120px;
+}
+.agenda-day-name { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); font-weight: 700; margin-bottom: 4px; }
+.agenda-day-date { font-size: 20px; font-weight: 900; color: var(--text-primary); margin-bottom: 8px; line-height: 1; }
+.agenda-day.today .agenda-day-date { color: var(--accent); }
+.agenda-event {
+  border-radius: var(--radius-sm); padding: 5px 7px; font-size: 11px;
+  margin-bottom: 4px; cursor: pointer; line-height: 1.4; transition: opacity 0.15s;
+}
+.agenda-event:hover { opacity: 0.8; }
+.agenda-event.sesion   { background: rgba(59,130,246,0.18); color: #93c5fd; border-left: 3px solid #3b82f6; }
+.agenda-event.contacto { background: rgba(156,163,175,0.15); color: var(--text-muted); border-left: 3px solid var(--border-light); }
+.agenda-event-name { font-weight: 700; }
+.agenda-empty { font-size: 11px; color: var(--border-light); text-align: center; padding: 12px 0; }
+
+/* ─── SESIONES TOTALES ───────────────────────────────────── */
+.sessions-totals { display: flex; gap: 16px; padding: 12px 0; margin-bottom: 12px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.sessions-total-item .lbl { color: var(--text-muted); font-size: 11px; margin-bottom: 2px; }
+.sessions-total-item .val { font-weight: 700; font-size: 16px; }
 
 /* ─── RESPONSIVE ─────────────────────────────────────────── */
 @media (max-width: 900px) {

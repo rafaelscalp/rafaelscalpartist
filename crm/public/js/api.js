@@ -20,19 +20,22 @@ const api = {
 
   // Clientes / Leads
   leads: {
-    list:    (params = {}) => api.request('GET', '/leads?' + new URLSearchParams(params)),
-    metrics: ()            => api.request('GET', '/leads/metrics'),
-    get:     (id)          => api.request('GET', `/leads/${id}`),
-    create:  (data)        => api.request('POST', '/leads', data),
-    update:  (id, data)    => api.request('PATCH', `/leads/${id}`, data),
-    delete:  (id)          => api.request('DELETE', `/leads/${id}`),
+    list:       (params = {}) => api.request('GET', '/leads?' + new URLSearchParams(params)),
+    metrics:    ()            => api.request('GET', '/leads/metrics'),
+    get:        (id)          => api.request('GET', `/leads/${id}`),
+    create:     (data)        => api.request('POST', '/leads', data),
+    update:     (id, data)    => api.request('PATCH', `/leads/${id}`, data),
+    delete:     (id)          => api.request('DELETE', `/leads/${id}`),
+    quickSearch:(q)           => api.request('GET', `/leads/search/quick?q=${encodeURIComponent(q)}`),
+    agenda:     (from, to)    => api.request('GET', `/leads/agenda/week?from=${from}&to=${to}`),
   },
 
   // Interacciones
   interactions: {
-    add:    (clientId, data) => api.request('POST', `/interactions/${clientId}`, data),
-    delete: (id)             => api.request('DELETE', `/interactions/${id}`),
-    addSession: (clientId, data) => api.request('POST', `/interactions/${clientId}/sessions`, data),
+    add:              (clientId, data) => api.request('POST', `/interactions/${clientId}`, data),
+    delete:           (id)             => api.request('DELETE', `/interactions/${id}`),
+    addSession:       (clientId, data) => api.request('POST', `/interactions/${clientId}/sessions`, data),
+    retoqueSuggestion:(clientId)       => api.request('GET', `/interactions/${clientId}/retoque-suggestion`),
   },
 
   // Fotos

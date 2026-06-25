@@ -67,4 +67,19 @@ router.post('/:clientId/sessions', (req, res) => {
   }
 });
 
+// Sugerir fecha de retoque (3 años desde la última sesión)
+router.get('/:clientId/retoque-suggestion', (req, res) => {
+  try {
+    const lastSession = db.prepare(
+      `SELECT date FROM sessions WHERE client_id = ? ORDER BY date DESC LIMIT 1`
+    ).get(req.params.clientId);
+    if (!lastSession) return res.json({ ok: true, data: null });
+    const d = new Date(lastSession.date);
+    d.setFullYear(d.getFullYear() + 3);
+    res.json({ ok: true, data: d.toISOString().split('T')[0] });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 module.exports = router;

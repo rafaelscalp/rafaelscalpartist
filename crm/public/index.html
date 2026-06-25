@@ -29,6 +29,10 @@
         <span class="icon">👥</span> Clientes
       </div>
 
+      <div class="nav-item" data-view="agenda" onclick="navigate('agenda')">
+        <span class="icon">📅</span> Agenda
+      </div>
+
       <div class="nav-section-label" style="margin-top:12px">Próximas fases</div>
       <div class="nav-item" style="opacity:0.4;cursor:not-allowed" title="Fase 3">
         <span class="icon">💬</span> WhatsApp
@@ -38,7 +42,7 @@
       </div>
     </nav>
 
-    <div class="sidebar-footer">v1.2 · Fases 1+2</div>
+    <div class="sidebar-footer">v1.3 · Fases 1+2</div>
   </aside>
 
   <!-- ─── MAIN ─────────────────────────────────────────────── -->
@@ -46,10 +50,13 @@
 
     <header class="topbar">
       <h1 class="topbar-title" id="topbar-title">Dashboard</h1>
-      <div class="search-box">
-        <span class="search-icon">🔍</span>
-        <input type="text" id="global-search" placeholder="Buscar cliente, teléfono…"
-               oninput="handleGlobalSearch(this.value)">
+      <div class="search-wrapper">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="global-search" placeholder="Buscar cliente, teléfono…"
+                 oninput="handleGlobalSearch(this.value)" autocomplete="off">
+        </div>
+        <div class="search-dropdown" id="search-dropdown" style="display:none"></div>
       </div>
       <button class="btn btn-primary" onclick="openCreateModal()">+ Nuevo lead</button>
       <button class="btn btn-secondary" onclick="exportCSV()" title="Exportar a CSV">⬇ CSV</button>
@@ -118,6 +125,13 @@
           <div id="upcoming-retoques"><p class="text-muted" style="font-size:12px">Sin retoques agendados</p></div>
         </div>
         <div class="card">
+          <div class="section-title">Pendiente de cobro</div>
+          <div id="m-pending-block">
+            <div class="metric-value" id="m-pending-revenue" style="font-size:28px">—</div>
+            <div class="metric-sub">Sesiones Señadas + Pendientes</div>
+          </div>
+        </div>
+        <div class="card">
           <div class="section-title" style="margin-bottom:0">Leads recientes</div>
           <table class="leads-table" style="margin-top:8px">
             <thead><tr><th>Nombre</th><th>Origen</th><th>Etapa</th><th>Temperatura</th><th>Ingresó</th></tr></thead>
@@ -163,6 +177,19 @@
         <button class="btn btn-ghost btn-sm" onclick="clearFilters()">✕ Limpiar</button>
       </div>
       <div class="clients-grid" id="clients-grid">
+        <div style="grid-column:1/-1;text-align:center;padding:40px"><div class="spinner" style="margin:auto"></div></div>
+      </div>
+    </section>
+
+    <!-- ─── AGENDA ──────────────────────────────────────────── -->
+    <section id="view-agenda" class="view">
+      <div class="agenda-nav">
+        <button class="btn btn-secondary btn-sm" onclick="agendaChangeWeek(-1)">← Anterior</button>
+        <span class="agenda-week-label" id="agenda-week-label">—</span>
+        <button class="btn btn-secondary btn-sm" onclick="agendaChangeWeek(1)">Siguiente →</button>
+        <button class="btn btn-ghost btn-sm" onclick="agendaGoToday()">Hoy</button>
+      </div>
+      <div class="agenda-grid" id="agenda-grid">
         <div style="grid-column:1/-1;text-align:center;padding:40px"><div class="spinner" style="margin:auto"></div></div>
       </div>
     </section>
@@ -351,6 +378,7 @@
 <script src="/js/pipeline.js"></script>
 <script src="/js/clients.js"></script>
 <script src="/js/messages.js"></script>
+<script src="/js/agenda.js"></script>
 <script src="/js/app.js"></script>
 
 </body>

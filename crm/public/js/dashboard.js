@@ -10,7 +10,9 @@ async function loadDashboard() {
     document.getElementById('m-close-rate').textContent    = m.closeRate + '%';
     document.getElementById('m-revenue-month').textContent = fmtCurrency(m.revenueThisMonth);
     document.getElementById('m-revenue-total').textContent = fmtCurrency(m.revenueTotal);
-    document.getElementById('m-no-contact').textContent    = m.noContactAlert;
+    document.getElementById('m-no-contact').textContent      = m.noContactAlert;
+    const pendEl = document.getElementById('m-pending-revenue');
+    if (pendEl) pendEl.textContent = fmtCurrency(m.pendingRevenue);
 
     renderStageChart(m.byStage);
     renderOriginChart(m.byOrigin);
@@ -88,20 +90,31 @@ function renderUpcomingRetoques(retoques) {
     return;
   }
   const today = new Date();
-  el.innerHTML = retoques.map(r => {
+  const rows = retoques.map(r => {
     const days = Math.round((new Date(r.next_retoque) - today) / (1000*60*60*24));
-    const urgent = days <= 30;
-    return `<div class="retoque-item" onclick="openClientDetail('${r.id}')" style="cursor:pointer">
-      <div>
-        <div style="font-weight:700;font-size:13px">${r.name}</div>
-        <div style="font-size:11px;color:var(--text-muted)">${r.phone || ''}</div>
-      </div>
-      <div style="text-align:right">
-        <div class="retoque-date ${urgent ? 'retoque-urgent' : ''}">${fmtDate(r.next_retoque)}</div>
-        <div style="font-size:11px;color:var(--text-muted)">en ${days} días</div>
-      </div>
-    </div>`;
+    let urgencyClass = 'urgency-yellow', urgencyLabel = `${days}d`;
+    if (days < 30)      { urgencyClass = 'urgency-red';    }
+    else if (days < 60) { urgencyClass = 'urgency-orange'; }
+    return `<tr onclick="openClientDetail('${r.id}')">
+      <td style="font-weight:700">${r.name}</td>
+      <td style="color:var(--text-muted)">${r.phone || '—'}</td>
+      <td>${fmtDate(r.next_retoque)}</td>
+      <td><span class="urgency-badge ${urgencyClass}">en ${urgencyLabel}</span></td>
+      <td><button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();copyRetoqueMsgFor('${r.id}','${r.name.replace(/'/g,"\\'")}')">💬 WA</button></td>
+    </tr>`;
   }).join('');
+  el.innerHTML = `<table class="retoque-table">
+    <thead><tr><th>Nombre</th><th>Teléfono</th><th>Fecha retoque</th><th>Días restantes</th><th></th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+function copyRetoqueMsgFor(clientId, nombre) {
+  const primerNombre = nombre.split(' ')[0];
+  const msg = `Hola ${primerNombre}, te escribo porque se está acercando la fecha de tu retoque. ¿Coordinamos un turno?`;
+  navigator.clipboard.writeText(msg)
+    .then(() => toast(`Mensaje para ${primerNombre} copiado ✓`, 'success'))
+    .catch(() => toast('No se pudo copiar', 'error'));
 }
 
 function renderRecentLeads(leads) {

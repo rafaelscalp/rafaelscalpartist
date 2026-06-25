@@ -28,9 +28,9 @@ router.get('/', (req, res) => {
   if (from)        { sql += ` AND c.created_at >= ?`; params.push(from); }
   if (to)          { sql += ` AND c.created_at <= ?`; params.push(to + 'T23:59:59'); }
   if (search) {
-    sql += ` AND (c.name LIKE ? OR c.phone LIKE ? OR c.email LIKE ?)`;
+    sql += ` AND (c.name LIKE ? OR c.phone LIKE ? OR c.email LIKE ? OR c.campaign LIKE ? OR c.initial_message LIKE ?)`;
     const q = `%${search}%`;
-    params.push(q, q, q);
+    params.push(q, q, q, q, q);
   }
 
   sql += ` ORDER BY c.created_at DESC`;
@@ -114,8 +114,13 @@ router.get('/metrics', (req, res) => {
     const upcomingRetoques = db.prepare(`
       SELECT id, name, phone, next_retoque FROM clients
       WHERE next_retoque IS NOT NULL AND next_retoque BETWEEN ? AND ?
-      ORDER BY next_retoque ASC LIMIT 10
+      ORDER BY next_retoque ASC LIMIT 20
     `).all(today, in90);
+
+    // Pendiente de cobro: sesiones Señadas o Pendientes (todos los clientes)
+    const pendingRevenue = db.prepare(
+      `SELECT COALESCE(SUM(price),0) as total FROM sessions WHERE payment_status IN ('Señado','Pendiente')`
+    ).get();
 
     res.json({
       ok: true,
@@ -126,6 +131,7 @@ router.get('/metrics', (req, res) => {
         closeRate: parseFloat(closeRate),
         revenueThisMonth: revenue.total,
         revenueTotal: revenueTotal.total,
+        pendingRevenue: pendingRevenue.total,
         noContactAlert: noContactAlert.count,
         byStage,
         byOrigin,
@@ -135,6 +141,52 @@ router.get('/metrics', (req, res) => {
         upcomingRetoques,
       },
     });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ─── BÚSQUEDA RÁPIDA (dropdown) ─────────────────────────────────────────────
+
+router.get('/search/quick', (req, res) => {
+  const { q } = req.query;
+  if (!q || q.length < 2) return res.json({ ok: true, data: [] });
+  const like = `%${q}%`;
+  try {
+    const results = db.prepare(`
+      SELECT id, name, phone, stage, temperature, origin
+      FROM clients
+      WHERE name LIKE ? OR phone LIKE ? OR email LIKE ? OR campaign LIKE ? OR initial_message LIKE ?
+      ORDER BY created_at DESC LIMIT 8
+    `).all(like, like, like, like, like);
+    res.json({ ok: true, data: results });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ─── AGENDA SEMANAL ──────────────────────────────────────────────────────────
+
+router.get('/agenda/week', (req, res) => {
+  const { from, to } = req.query;
+  if (!from || !to) return res.status(400).json({ ok: false, error: 'from y to requeridos' });
+  try {
+    const sessions = db.prepare(`
+      SELECT s.id, s.date, s.type, s.price, s.payment_status,
+             c.id as client_id, c.name, c.phone
+      FROM sessions s JOIN clients c ON s.client_id = c.id
+      WHERE s.date BETWEEN ? AND ?
+      ORDER BY s.date ASC
+    `).all(from, to);
+
+    const contacts = db.prepare(`
+      SELECT id, name, phone, next_touch, stage
+      FROM clients
+      WHERE next_touch BETWEEN ? AND ?
+      ORDER BY next_touch ASC
+    `).all(from, to);
+
+    res.json({ ok: true, data: { sessions, contacts } });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
   }

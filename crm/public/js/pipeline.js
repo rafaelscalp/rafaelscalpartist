@@ -112,8 +112,16 @@ function buildCard(client) {
     <div class="card-date">Ingresó ${timeAgo(client.created_at)}</div>
     <div class="card-actions">
       <button class="btn btn-ghost btn-icon btn-sm" title="Ver detalle" onclick="event.stopPropagation();openClientDetail('${client.id}')">👁</button>
+      <button class="btn btn-ghost btn-icon btn-sm" title="Nota rápida" onclick="event.stopPropagation();toggleQuickNote(event,'${client.id}')" id="qnbtn-${client.id}">📝</button>
       <button class="btn btn-ghost btn-icon btn-sm" title="Mensaje WA" onclick="event.stopPropagation();openClientDetail('${client.id}').then(()=>openWAModal())">💬</button>
       <button class="btn btn-ghost btn-icon btn-sm" title="Editar" onclick="event.stopPropagation();openEditModal('${client.id}')">✏️</button>
+    </div>
+    <div class="quick-note-popup" id="qnp-${client.id}" style="display:none" onclick="event.stopPropagation()">
+      <textarea id="qnt-${client.id}" placeholder="Nota rápida…" rows="3"></textarea>
+      <div class="quick-note-actions">
+        <button class="btn btn-ghost btn-sm" onclick="closeQuickNote('${client.id}')">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="saveQuickNote('${client.id}')">Guardar</button>
+      </div>
     </div>
   `;
 
@@ -121,6 +129,44 @@ function buildCard(client) {
   el.addEventListener('dragend', () => { draggedId = null; el.classList.remove('dragging'); });
   el.addEventListener('click', () => openClientDetail(client.id));
   return el;
+}
+
+// ─── NOTA RÁPIDA ──────────────────────────────────────────────────────────────
+
+function toggleQuickNote(e, clientId) {
+  // Cierra todos los otros popups
+  document.querySelectorAll('.quick-note-popup').forEach(p => {
+    if (p.id !== `qnp-${clientId}`) p.style.display = 'none';
+  });
+  const popup = document.getElementById(`qnp-${clientId}`);
+  if (!popup) return;
+  const isOpen = popup.style.display !== 'none';
+  if (isOpen) { popup.style.display = 'none'; return; }
+
+  // Posicionar fixed relativo al botón
+  const btn = e.currentTarget || e.target;
+  const rect = btn.getBoundingClientRect ? btn.getBoundingClientRect() : { bottom: 100, left: 100 };
+  popup.style.top  = (rect.bottom + 6) + 'px';
+  popup.style.left = Math.max(8, rect.left - 180) + 'px';
+  popup.style.display = 'block';
+  document.getElementById(`qnt-${clientId}`).focus();
+}
+
+function closeQuickNote(clientId) {
+  const popup = document.getElementById(`qnp-${clientId}`);
+  if (popup) { popup.style.display = 'none'; document.getElementById(`qnt-${clientId}`).value = ''; }
+}
+
+async function saveQuickNote(clientId) {
+  const content = document.getElementById(`qnt-${clientId}`).value.trim();
+  if (!content) return toast('Escribe algo primero', 'error');
+  try {
+    await api.interactions.add(clientId, { type: 'Nota', direction: 'Interno', content });
+    closeQuickNote(clientId);
+    toast('Nota guardada', 'success');
+  } catch (err) {
+    toast(err.message, 'error');
+  }
 }
 
 function filterPipeline(search) {
