@@ -1,6 +1,5 @@
 backend:
-  name: github
-  repo: rafaelscalp/rafaelscalpartist
+  name: git-gateway
   branch: main
 
 locale: 'es'
