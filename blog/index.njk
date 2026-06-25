@@ -128,7 +128,7 @@ permalink: /blog/
     <div class="post-card-img"></div>
     {% endif %}
     <div class="post-card-body">
-      <div class="post-card-date">{{ post.date | date: "%d/%m/%Y" }}</div>
+      <div class="post-card-date">{{ post.date | fechaCorta }}</div>
       <div class="post-card-title">{{ post.data.title }}</div>
       {% if post.data.description %}
       <div class="post-card-desc">{{ post.data.description }}</div>
