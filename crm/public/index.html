@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rafael Scalp CRM</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ─── SIDEBAR ──────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="brand">Rafael<br><span>Scalp</span> Artist</div>
+      <div class="sub">CRM Interno</div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Principal</div>
+      <div class="nav-item active" data-view="dashboard" onclick="navigate('dashboard')">
+        <span class="icon">📊</span> Dashboard
+      </div>
+      <div class="nav-item" data-view="pipeline" onclick="navigate('pipeline')">
+        <span class="icon">📋</span> Pipeline
+      </div>
+      <div class="nav-item" data-view="clients" onclick="navigate('clients')">
+        <span class="icon">👥</span> Clientes
+      </div>
+
+      <div class="nav-section-label" style="margin-top:12px">Próximas fases</div>
+      <div class="nav-item" style="opacity:0.4;cursor:not-allowed" title="Fase 2">
+        <span class="icon">🔗</span> Meta Leads
+      </div>
+      <div class="nav-item" style="opacity:0.4;cursor:not-allowed" title="Fase 3">
+        <span class="icon">💬</span> WhatsApp
+      </div>
+      <div class="nav-item" style="opacity:0.4;cursor:not-allowed" title="Fase 4">
+        <span class="icon">🤖</span> IA Clasificación
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      v1.0 · Fase 1
+    </div>
+  </aside>
+
+  <!-- ─── MAIN ─────────────────────────────────────────────── -->
+  <div class="main">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <h1 class="topbar-title" id="topbar-title">Dashboard</h1>
+
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="global-search" placeholder="Buscar cliente, teléfono…"
+               oninput="handleGlobalSearch(this.value)">
+      </div>
+
+      <button class="btn btn-primary" onclick="openCreateModal()">+ Nuevo lead</button>
+
+      <button class="btn btn-secondary" onclick="exportCSV()" title="Exportar a CSV">
+        ⬇ CSV
+      </button>
+    </header>
+
+    <!-- ─── DASHBOARD VIEW ────────────────────────────────── -->
+    <section id="view-dashboard" class="view active">
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-icon">📥</div>
+          <div class="metric-label">Leads este mes</div>
+          <div class="metric-value" id="m-leads-month">—</div>
+          <div class="metric-sub">Total: <span id="m-total-leads">—</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon">✅</div>
+          <div class="metric-label">Clientes activos</div>
+          <div class="metric-value accent" id="m-active">—</div>
+          <div class="metric-sub">Sesiones completadas</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon">🎯</div>
+          <div class="metric-label">Tasa de cierre</div>
+          <div class="metric-value" id="m-close-rate">—</div>
+          <div class="metric-sub">Leads → Clientes</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon">💰</div>
+          <div class="metric-label">Facturación del mes</div>
+          <div class="metric-value accent" id="m-revenue-month">—</div>
+          <div class="metric-sub">Total: <span id="m-revenue-total">—</span></div>
+        </div>
+      </div>
+
+      <div class="dashboard-row">
+        <div class="card">
+          <div class="section-title">Leads por etapa</div>
+          <div class="bar-chart" id="chart-stages">
+            <div class="spinner" style="margin:20px auto"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="section-title">Leads por origen</div>
+          <div class="bar-chart" id="chart-origins">
+            <div class="spinner" style="margin:20px auto"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title" style="margin-bottom:0">Leads recientes</div>
+        <table class="leads-table" style="margin-top:8px">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Origen</th>
+              <th>Etapa</th>
+              <th>Temperatura</th>
+              <th>Ingresó</th>
+            </tr>
+          </thead>
+          <tbody id="recent-leads-body">
+            <tr><td colspan="5" style="text-align:center;padding:20px"><div class="spinner" style="margin:auto"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ─── PIPELINE VIEW ─────────────────────────────────── -->
+    <section id="view-pipeline" class="view pipeline-view">
+      <div class="pipeline-toolbar">
+        <span style="font-size:12px;color:var(--text-muted)">Arrastrá las tarjetas para cambiar de etapa</span>
+        <div style="flex:1"></div>
+        <button class="btn btn-primary btn-sm" onclick="openCreateModal()">+ Nuevo</button>
+      </div>
+      <div class="pipeline-board" id="pipeline-board">
+        <div style="margin:auto"><div class="spinner"></div></div>
+      </div>
+    </section>
+
+    <!-- ─── CLIENTS VIEW ──────────────────────────────────── -->
+    <section id="view-clients" class="view">
+      <div class="filters-bar">
+        <select class="filter-select" id="filter-stage" onchange="applyClientsFilters()">
+          <option value="">Todas las etapas</option>
+          <option>Nuevo</option><option>Contactado</option><option>Presupuestado</option>
+          <option>Sesión agendada</option><option>Cliente activo</option><option>Perdido</option>
+        </select>
+        <select class="filter-select" id="filter-origin" onchange="applyClientsFilters()">
+          <option value="">Todos los orígenes</option>
+          <option>Meta</option><option>Google</option><option>Instagram</option>
+          <option>Referido</option><option>Orgánico</option><option>Otro</option>
+        </select>
+        <select class="filter-select" id="filter-temp" onchange="applyClientsFilters()">
+          <option value="">Toda temperatura</option>
+          <option>Caliente</option><option>Tibio</option><option>Frío</option>
+        </select>
+        <input type="date" class="filter-select" id="filter-from" onchange="applyClientsFilters()" placeholder="Desde">
+        <input type="date" class="filter-select" id="filter-to" onchange="applyClientsFilters()" placeholder="Hasta">
+        <button class="btn btn-ghost btn-sm" onclick="clearFilters()">✕ Limpiar</button>
+      </div>
+      <div class="clients-grid" id="clients-grid">
+        <div style="grid-column:1/-1;text-align:center;padding:40px"><div class="spinner" style="margin:auto"></div></div>
+      </div>
+    </section>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ═══════════════════════════════════════
+     MODAL — CREAR / EDITAR CLIENTE
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-form" onclick="if(event.target===this)closeFormModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modal-form-title">Nuevo lead</h2>
+      <button class="btn btn-ghost btn-icon" onclick="closeFormModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="client-form" onsubmit="submitClientForm(event)">
+        <div class="form-grid">
+          <div class="form-group full">
+            <label class="form-label">Nombre *</label>
+            <input name="name" class="form-input" required placeholder="Juan García">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Teléfono</label>
+            <input name="phone" class="form-input" placeholder="+5491155551111">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input name="email" type="email" class="form-input" placeholder="juan@email.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Origen</label>
+            <select name="origin" class="form-select">
+              <option>Meta</option><option>Google</option><option>Instagram</option>
+              <option>Referido</option><option>Orgánico</option><option>Otro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Campaña</label>
+            <input name="campaign" class="form-input" placeholder="SMP_BA_Junio">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Etapa</label>
+            <select name="stage" class="form-select">
+              <option>Nuevo</option><option>Contactado</option><option>Presupuestado</option>
+              <option>Sesión agendada</option><option>Cliente activo</option><option>Perdido</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Temperatura</label>
+            <select name="temperature" class="form-select">
+              <option>Caliente</option><option selected>Tibio</option><option>Frío</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Presupuesto ($)</label>
+            <input name="budget" type="number" class="form-input" placeholder="150000">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Próximo contacto</label>
+            <input name="next_touch" type="date" class="form-input">
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Notas</label>
+            <textarea name="notes" class="form-textarea" placeholder="Observaciones, preferencias, etc."></textarea>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeFormModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="document.getElementById('client-form').requestSubmit()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     MODAL — DETALLE DE CLIENTE
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-detail" onclick="if(event.target===this)closeDetailModal()">
+  <div class="modal detail-modal">
+    <div class="modal-header">
+      <div class="detail-header-info">
+        <div class="detail-avatar" id="detail-avatar">?</div>
+        <div>
+          <div class="detail-name" id="detail-name">—</div>
+          <div class="detail-sub" id="detail-sub">—</div>
+          <div class="detail-badges" id="detail-badges"></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:flex-start">
+        <button id="detail-edit-btn" class="btn btn-secondary btn-sm">✏️ Editar</button>
+        <button id="detail-delete-btn" class="btn btn-danger btn-sm">🗑</button>
+        <button class="btn btn-ghost btn-icon" onclick="closeDetailModal()">✕</button>
+      </div>
+    </div>
+    <div class="modal-body" style="padding-top:0">
+      <div class="detail-tabs">
+        <div class="detail-tab active" data-tab="info"     onclick="switchDetailTabByClick('info')">Información</div>
+        <div class="detail-tab"        data-tab="timeline" onclick="switchDetailTabByClick('timeline')">Historial</div>
+        <div class="detail-tab"        data-tab="sessions" onclick="switchDetailTabByClick('sessions')">Sesiones</div>
+        <div class="detail-tab"        data-tab="photos"   onclick="switchDetailTabByClick('photos')">Fotos</div>
+      </div>
+      <div class="detail-panel active" data-panel="info"     id="panel-info"></div>
+      <div class="detail-panel"        data-panel="timeline" id="panel-timeline"></div>
+      <div class="detail-panel"        data-panel="sessions" id="panel-sessions"></div>
+      <div class="detail-panel"        data-panel="photos"   id="panel-photos"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<!-- Scripts -->
+<script src="/js/api.js"></script>
+<script src="/js/utils.js"></script>
+<script src="/js/dashboard.js"></script>
+<script src="/js/pipeline.js"></script>
+<script src="/js/clients.js"></script>
+<script src="/js/app.js"></script>
+
+</body>
+</html>
