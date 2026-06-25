@@ -30,9 +30,6 @@
       </div>
 
       <div class="nav-section-label" style="margin-top:12px">Próximas fases</div>
-      <div class="nav-item" style="opacity:0.4;cursor:not-allowed" title="Fase 2">
-        <span class="icon">🔗</span> Meta Leads
-      </div>
       <div class="nav-item" style="opacity:0.4;cursor:not-allowed" title="Fase 3">
         <span class="icon">💬</span> WhatsApp
       </div>
@@ -41,32 +38,24 @@
       </div>
     </nav>
 
-    <div class="sidebar-footer">
-      v1.0 · Fase 1
-    </div>
+    <div class="sidebar-footer">v1.2 · Fases 1+2</div>
   </aside>
 
   <!-- ─── MAIN ─────────────────────────────────────────────── -->
   <div class="main">
 
-    <!-- Topbar -->
     <header class="topbar">
       <h1 class="topbar-title" id="topbar-title">Dashboard</h1>
-
       <div class="search-box">
         <span class="search-icon">🔍</span>
         <input type="text" id="global-search" placeholder="Buscar cliente, teléfono…"
                oninput="handleGlobalSearch(this.value)">
       </div>
-
       <button class="btn btn-primary" onclick="openCreateModal()">+ Nuevo lead</button>
-
-      <button class="btn btn-secondary" onclick="exportCSV()" title="Exportar a CSV">
-        ⬇ CSV
-      </button>
+      <button class="btn btn-secondary" onclick="exportCSV()" title="Exportar a CSV">⬇ CSV</button>
     </header>
 
-    <!-- ─── DASHBOARD VIEW ────────────────────────────────── -->
+    <!-- ─── DASHBOARD ─────────────────────────────────────── -->
     <section id="view-dashboard" class="view active">
       <div class="metrics-grid">
         <div class="metric-card">
@@ -93,43 +82,54 @@
           <div class="metric-value accent" id="m-revenue-month">—</div>
           <div class="metric-sub">Total: <span id="m-revenue-total">—</span></div>
         </div>
+        <div class="metric-card" id="card-no-contact" style="cursor:pointer" onclick="navigate('pipeline')">
+          <div class="metric-icon">⚠️</div>
+          <div class="metric-label">Sin contacto +24hs</div>
+          <div class="metric-value" id="m-no-contact" style="color:var(--warning)">—</div>
+          <div class="metric-sub">Clic para ver en pipeline</div>
+        </div>
       </div>
 
       <div class="dashboard-row">
         <div class="card">
           <div class="section-title">Leads por etapa</div>
-          <div class="bar-chart" id="chart-stages">
-            <div class="spinner" style="margin:20px auto"></div>
-          </div>
+          <div class="bar-chart" id="chart-stages"><div class="spinner" style="margin:20px auto"></div></div>
         </div>
         <div class="card">
           <div class="section-title">Leads por origen</div>
-          <div class="bar-chart" id="chart-origins">
-            <div class="spinner" style="margin:20px auto"></div>
-          </div>
+          <div class="bar-chart" id="chart-origins"><div class="spinner" style="margin:20px auto"></div></div>
         </div>
       </div>
 
-      <div class="card">
-        <div class="section-title" style="margin-bottom:0">Leads recientes</div>
-        <table class="leads-table" style="margin-top:8px">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Origen</th>
-              <th>Etapa</th>
-              <th>Temperatura</th>
-              <th>Ingresó</th>
-            </tr>
-          </thead>
-          <tbody id="recent-leads-body">
-            <tr><td colspan="5" style="text-align:center;padding:20px"><div class="spinner" style="margin:auto"></div></td></tr>
-          </tbody>
-        </table>
+      <div class="dashboard-row">
+        <div class="card">
+          <div class="section-title">Campañas Meta — este mes</div>
+          <div id="chart-campaigns"><p class="text-muted" style="font-size:12px">Sin datos de campañas</p></div>
+        </div>
+        <div class="card">
+          <div class="section-title">Motivos de pérdida — este mes</div>
+          <div class="bar-chart" id="chart-loss"><p class="text-muted" style="font-size:12px">Sin pérdidas registradas</p></div>
+        </div>
+      </div>
+
+      <div class="dashboard-row">
+        <div class="card">
+          <div class="section-title">Retoques próximos (90 días)</div>
+          <div id="upcoming-retoques"><p class="text-muted" style="font-size:12px">Sin retoques agendados</p></div>
+        </div>
+        <div class="card">
+          <div class="section-title" style="margin-bottom:0">Leads recientes</div>
+          <table class="leads-table" style="margin-top:8px">
+            <thead><tr><th>Nombre</th><th>Origen</th><th>Etapa</th><th>Temperatura</th><th>Ingresó</th></tr></thead>
+            <tbody id="recent-leads-body">
+              <tr><td colspan="5" style="text-align:center;padding:20px"><div class="spinner" style="margin:auto"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
 
-    <!-- ─── PIPELINE VIEW ─────────────────────────────────── -->
+    <!-- ─── PIPELINE ──────────────────────────────────────── -->
     <section id="view-pipeline" class="view pipeline-view">
       <div class="pipeline-toolbar">
         <span style="font-size:12px;color:var(--text-muted)">Arrastrá las tarjetas para cambiar de etapa</span>
@@ -141,7 +141,7 @@
       </div>
     </section>
 
-    <!-- ─── CLIENTS VIEW ──────────────────────────────────── -->
+    <!-- ─── CLIENTES ──────────────────────────────────────── -->
     <section id="view-clients" class="view">
       <div class="filters-bar">
         <select class="filter-select" id="filter-stage" onchange="applyClientsFilters()">
@@ -158,8 +158,8 @@
           <option value="">Toda temperatura</option>
           <option>Caliente</option><option>Tibio</option><option>Frío</option>
         </select>
-        <input type="date" class="filter-select" id="filter-from" onchange="applyClientsFilters()" placeholder="Desde">
-        <input type="date" class="filter-select" id="filter-to" onchange="applyClientsFilters()" placeholder="Hasta">
+        <input type="date" class="filter-select" id="filter-from" onchange="applyClientsFilters()">
+        <input type="date" class="filter-select" id="filter-to" onchange="applyClientsFilters()">
         <button class="btn btn-ghost btn-sm" onclick="clearFilters()">✕ Limpiar</button>
       </div>
       <div class="clients-grid" id="clients-grid">
@@ -167,8 +167,8 @@
       </div>
     </section>
 
-  </div><!-- /main -->
-</div><!-- /app -->
+  </div>
+</div>
 
 <!-- ═══════════════════════════════════════
      MODAL — CREAR / EDITAR CLIENTE
@@ -187,8 +187,8 @@
             <input name="name" class="form-input" required placeholder="Juan García">
           </div>
           <div class="form-group">
-            <label class="form-label">Teléfono</label>
-            <input name="phone" class="form-input" placeholder="+5491155551111">
+            <label class="form-label">Teléfono * <span style="color:var(--text-muted);font-weight:400">(mín. 8 dígitos)</span></label>
+            <input name="phone" class="form-input" required placeholder="+5491155551111">
           </div>
           <div class="form-group">
             <label class="form-label">Email</label>
@@ -196,14 +196,23 @@
           </div>
           <div class="form-group">
             <label class="form-label">Origen</label>
-            <select name="origin" class="form-select">
+            <select name="origin" class="form-select" onchange="toggleMetaFields(this.value)">
               <option>Meta</option><option>Google</option><option>Instagram</option>
-              <option>Referido</option><option>Orgánico</option><option>Otro</option>
+              <option>Referido</option><option>Orgánico</option><option selected>Otro</option>
             </select>
           </div>
           <div class="form-group">
             <label class="form-label">Campaña</label>
             <input name="campaign" class="form-input" placeholder="SMP_BA_Junio">
+          </div>
+          <!-- Campos adicionales Meta (se muestran solo cuando origen = Meta) -->
+          <div class="form-group meta-fields" id="meta-extra-fields">
+            <label class="form-label">Conjunto de anuncios</label>
+            <input name="adset" class="form-input" placeholder="Intereses SMP BA">
+          </div>
+          <div class="form-group meta-fields" id="meta-extra-fields-2">
+            <label class="form-label">Anuncio específico</label>
+            <input name="ad_name" class="form-input" placeholder="Video testimonio v1">
           </div>
           <div class="form-group">
             <label class="form-label">Etapa</label>
@@ -227,7 +236,11 @@
             <input name="next_touch" type="date" class="form-input">
           </div>
           <div class="form-group full">
-            <label class="form-label">Notas</label>
+            <label class="form-label">Mensaje inicial <span style="color:var(--text-muted);font-weight:400">(primera consulta del cliente)</span></label>
+            <textarea name="initial_message" class="form-textarea" placeholder="¿Qué escribió o preguntó el cliente cuando llegó?"></textarea>
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Notas internas</label>
             <textarea name="notes" class="form-textarea" placeholder="Observaciones, preferencias, etc."></textarea>
           </div>
         </div>
@@ -254,7 +267,8 @@
           <div class="detail-badges" id="detail-badges"></div>
         </div>
       </div>
-      <div style="display:flex;gap:8px;align-items:flex-start">
+      <div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap">
+        <button class="btn btn-secondary btn-sm" onclick="openWAModal()" title="Preparar mensaje para WhatsApp">💬 Preparar mensaje</button>
         <button id="detail-edit-btn" class="btn btn-secondary btn-sm">✏️ Editar</button>
         <button id="detail-delete-btn" class="btn btn-danger btn-sm">🗑</button>
         <button class="btn btn-ghost btn-icon" onclick="closeDetailModal()">✕</button>
@@ -275,15 +289,68 @@
   </div>
 </div>
 
+<!-- ═══════════════════════════════════════
+     MODAL — MENSAJE WHATSAPP
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-wa" onclick="if(event.target===this)closeWAModal()">
+  <div class="modal wa-modal">
+    <div class="modal-header">
+      <h2 class="modal-title">💬 Mensaje para WhatsApp</h2>
+      <button class="btn btn-ghost btn-icon" onclick="closeWAModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <button class="btn btn-secondary btn-sm" onclick="generateWAMessage('primer_contacto')">Primer contacto</button>
+        <button class="btn btn-secondary btn-sm" onclick="generateWAMessage('seguimiento_24')">Seguimiento 24hs</button>
+        <button class="btn btn-secondary btn-sm" onclick="generateWAMessage('seguimiento_72')">Seguimiento 72hs</button>
+        <button class="btn btn-secondary btn-sm" onclick="generateWAMessage('presupuesto')">Enviar presupuesto</button>
+        <button class="btn btn-secondary btn-sm" onclick="generateWAMessage('confirmar_sesion')">Confirmar sesión</button>
+      </div>
+      <div class="wa-message-box" id="wa-message-box">Seleccioná un tipo de mensaje arriba.</div>
+      <button class="btn btn-primary wa-copy-btn" onclick="copyWAMessage()">📋 Copiar mensaje</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     MODAL — MOTIVO DE PÉRDIDA
+════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-loss" onclick="return false">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <h2 class="modal-title">¿Por qué se perdió este lead?</h2>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--text-muted);font-size:13px;margin-bottom:14px">
+        Registrar el motivo ayuda a mejorar la estrategia de captación.
+      </p>
+      <div class="loss-grid">
+        <button class="loss-option" onclick="selectLossReason(this,'Precio alto')">💸 Precio alto</button>
+        <button class="loss-option" onclick="selectLossReason(this,'Eligió otro profesional')">👤 Eligió otro profesional</button>
+        <button class="loss-option" onclick="selectLossReason(this,'No respondió')">🔇 No respondió</button>
+        <button class="loss-option" onclick="selectLossReason(this,'No era candidato')">🚫 No era candidato</button>
+        <button class="loss-option" onclick="selectLossReason(this,'Postergó sin fecha')">📅 Postergó sin fecha</button>
+        <button class="loss-option" onclick="selectLossReason(this,'Otro')">✏️ Otro</button>
+      </div>
+      <input type="text" id="loss-reason-other" class="form-input" placeholder="Especificá el motivo..."
+             style="display:none;margin-top:8px">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cancelLoss()">Cancelar</button>
+      <button class="btn btn-danger" onclick="confirmLoss()">Confirmar pérdida</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast container -->
 <div id="toast-container"></div>
 
-<!-- Scripts -->
 <script src="/js/api.js"></script>
 <script src="/js/utils.js"></script>
 <script src="/js/dashboard.js"></script>
 <script src="/js/pipeline.js"></script>
 <script src="/js/clients.js"></script>
+<script src="/js/messages.js"></script>
 <script src="/js/app.js"></script>
 
 </body>

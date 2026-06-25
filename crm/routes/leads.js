@@ -3,6 +3,13 @@ const router = express.Router();
 const db = require('../database/db');
 const { v4: uuidv4 } = require('uuid');
 
+// Valida que el teléfono tenga al menos 8 dígitos numéricos
+function validatePhone(phone) {
+  if (!phone) return false;
+  const digits = phone.replace(/\D/g, '');
+  return digits.length >= 8;
+}
+
 // ─── LISTAR / BUSCAR ────────────────────────────────────────────────────────
 
 router.get('/', (req, res) => {
@@ -11,7 +18,7 @@ router.get('/', (req, res) => {
   let sql = `SELECT c.*,
     (SELECT COUNT(*) FROM interactions WHERE client_id = c.id) AS interaction_count,
     (SELECT COUNT(*) FROM sessions WHERE client_id = c.id) AS session_count,
-    (SELECT SUM(price) FROM sessions WHERE client_id = c.id AND paid = 1) AS total_paid
+    (SELECT COALESCE(SUM(price),0) FROM sessions WHERE client_id = c.id AND payment_status = 'Pagado') AS total_paid
     FROM clients c WHERE 1=1`;
   const params = [];
 
@@ -42,6 +49,7 @@ router.get('/metrics', (req, res) => {
   try {
     const now = new Date();
     const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const firstOfMonthDate = firstOfMonth.split('T')[0];
 
     const leadsThisMonth = db.prepare(
       `SELECT COUNT(*) as count FROM clients WHERE created_at >= ?`
@@ -55,17 +63,14 @@ router.get('/metrics', (req, res) => {
       `SELECT COUNT(*) as count FROM clients WHERE stage = 'Cliente activo'`
     ).get();
 
+    // Facturación: solo sesiones Pagadas
     const revenue = db.prepare(
-      `SELECT COALESCE(SUM(price),0) as total FROM sessions WHERE paid = 1 AND date >= ?`
-    ).get(firstOfMonth.split('T')[0]);
+      `SELECT COALESCE(SUM(price),0) as total FROM sessions WHERE payment_status = 'Pagado' AND date >= ?`
+    ).get(firstOfMonthDate);
 
     const revenueTotal = db.prepare(
-      `SELECT COALESCE(SUM(price),0) as total FROM sessions WHERE paid = 1`
+      `SELECT COALESCE(SUM(price),0) as total FROM sessions WHERE payment_status = 'Pagado'`
     ).get();
-
-    const closedThisMonth = db.prepare(
-      `SELECT COUNT(*) as count FROM clients WHERE stage = 'Cliente activo' AND updated_at >= ?`
-    ).get(firstOfMonth);
 
     const total = db.prepare(`SELECT COUNT(*) as count FROM clients`).get();
     const closed = db.prepare(`SELECT COUNT(*) as count FROM clients WHERE stage = 'Cliente activo'`).get();
@@ -76,8 +81,41 @@ router.get('/metrics', (req, res) => {
     ).all();
 
     const recentLeads = db.prepare(
-      `SELECT id, name, phone, origin, stage, temperature, created_at FROM clients ORDER BY created_at DESC LIMIT 5`
+      `SELECT id, name, phone, origin, stage, temperature, created_at, last_contact_at FROM clients ORDER BY created_at DESC LIMIT 5`
     ).all();
+
+    // Leads sin contacto hace más de 24hs (excluye Perdidos y Clientes activos)
+    const noContactAlert = db.prepare(`
+      SELECT COUNT(*) as count FROM clients
+      WHERE stage NOT IN ('Perdido','Cliente activo')
+      AND (
+        last_contact_at IS NULL AND created_at < datetime('now', '-24 hours')
+        OR last_contact_at < datetime('now', '-24 hours')
+      )
+    `).get();
+
+    // Motivos de pérdida del mes
+    const lossReasons = db.prepare(`
+      SELECT loss_reason, COUNT(*) as count FROM clients
+      WHERE stage = 'Perdido' AND loss_reason IS NOT NULL AND updated_at >= ?
+      GROUP BY loss_reason ORDER BY count DESC
+    `).all(firstOfMonth);
+
+    // Campañas Meta del mes
+    const byCampaign = db.prepare(`
+      SELECT campaign, COUNT(*) as count FROM clients
+      WHERE origin = 'Meta' AND campaign IS NOT NULL AND campaign != '' AND created_at >= ?
+      GROUP BY campaign ORDER BY count DESC LIMIT 5
+    `).all(firstOfMonth);
+
+    // Retoques próximos 90 días
+    const today = now.toISOString().split('T')[0];
+    const in90 = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const upcomingRetoques = db.prepare(`
+      SELECT id, name, phone, next_retoque FROM clients
+      WHERE next_retoque IS NOT NULL AND next_retoque BETWEEN ? AND ?
+      ORDER BY next_retoque ASC LIMIT 10
+    `).all(today, in90);
 
     res.json({
       ok: true,
@@ -88,10 +126,13 @@ router.get('/metrics', (req, res) => {
         closeRate: parseFloat(closeRate),
         revenueThisMonth: revenue.total,
         revenueTotal: revenueTotal.total,
-        closedThisMonth: closedThisMonth.count,
+        noContactAlert: noContactAlert.count,
         byStage,
         byOrigin,
+        byCampaign,
+        lossReasons,
         recentLeads,
+        upcomingRetoques,
       },
     });
   } catch (err) {
@@ -128,22 +169,31 @@ router.get('/:id', (req, res) => {
 
 router.post('/', (req, res) => {
   try {
-    const id = uuidv4();
-    const { name, phone, email, origin, campaign, ad_id, stage, temperature, budget, notes, next_touch } = req.body;
+    const { name, phone, email, origin, campaign, adset, ad_name, ad_id,
+            stage, temperature, budget, notes, initial_message, next_touch } = req.body;
 
     if (!name) return res.status(400).json({ ok: false, error: 'El nombre es obligatorio' });
+    if (!phone) return res.status(400).json({ ok: false, error: 'El teléfono es obligatorio' });
+    if (!validatePhone(phone)) return res.status(400).json({ ok: false, error: 'El teléfono debe tener al menos 8 dígitos' });
+
+    const id = uuidv4();
 
     db.prepare(`
-      INSERT INTO clients (id, name, phone, email, origin, campaign, ad_id, stage, temperature, budget, notes, next_touch)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(id, name, phone || null, email || null, origin || 'Otro', campaign || null, ad_id || null,
-           stage || 'Nuevo', temperature || 'Tibio', budget || null, notes || '', next_touch || null);
+      INSERT INTO clients (id, name, phone, email, origin, campaign, adset, ad_name, ad_id,
+        stage, temperature, budget, notes, initial_message, next_touch)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, name, phone, email || null, origin || 'Otro', campaign || null,
+           adset || null, ad_name || null, ad_id || null,
+           stage || 'Nuevo', temperature || 'Tibio', budget || null,
+           notes || '', initial_message || null, next_touch || null);
 
-    // Interacción de sistema
+    // Interacción de sistema al crear
+    let sysMsg = `Lead creado. Origen: ${origin || 'Otro'}.`;
+    if (initial_message) sysMsg += ` Mensaje inicial registrado.`;
     db.prepare(`
       INSERT INTO interactions (id, client_id, type, direction, content)
       VALUES (?, ?, 'Sistema', 'Interno', ?)
-    `).run(uuidv4(), id, `Lead creado. Origen: ${origin || 'Otro'}.`);
+    `).run(uuidv4(), id, sysMsg);
 
     const client = db.prepare(`SELECT * FROM clients WHERE id = ?`).get(id);
     res.status(201).json({ ok: true, data: client });
@@ -159,7 +209,15 @@ router.patch('/:id', (req, res) => {
     const client = db.prepare(`SELECT * FROM clients WHERE id = ?`).get(req.params.id);
     if (!client) return res.status(404).json({ ok: false, error: 'Cliente no encontrado' });
 
-    const fields = ['name','phone','email','origin','campaign','stage','temperature','budget','notes','next_touch'];
+    // Validar teléfono si se está actualizando
+    if (req.body.phone !== undefined) {
+      if (!req.body.phone) return res.status(400).json({ ok: false, error: 'El teléfono es obligatorio' });
+      if (!validatePhone(req.body.phone)) return res.status(400).json({ ok: false, error: 'El teléfono debe tener al menos 8 dígitos' });
+    }
+
+    const fields = ['name','phone','email','origin','campaign','adset','ad_name',
+                    'stage','temperature','budget','notes','initial_message',
+                    'next_touch','next_retoque','loss_reason'];
     const updates = [];
     const values = [];
 

@@ -83,16 +83,10 @@ function exportCSV() {
   toast('Exportando CSV…', 'info');
 }
 
-// ─── SWITCH DE TAB EN DETALLE (con clientData desde DOM) ─────────────────────
+// ─── SWITCH DE TAB EN DETALLE ────────────────────────────────────────────────
 
-async function switchDetailTabByClick(tab) {
-  if (!currentClientId) return;
-  try {
-    const c = await api.leads.get(currentClientId);
-    switchDetailTab(tab, c);
-  } catch (err) {
-    toast('Error cargando datos', 'error');
-  }
+function switchDetailTabByClick(tab) {
+  activateTab(tab);
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────

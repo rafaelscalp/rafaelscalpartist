@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require('../database/db');
 const { v4: uuidv4 } = require('uuid');
 
-// Agregar interacción a un cliente
+// Agregar interacción (el trigger de DB actualiza last_contact_at automáticamente)
 router.post('/:clientId', (req, res) => {
   try {
     const { type, direction, content } = req.body;
@@ -36,20 +36,29 @@ router.delete('/:id', (req, res) => {
 // Agregar sesión
 router.post('/:clientId/sessions', (req, res) => {
   try {
-    const { date, type, price, paid, notes } = req.body;
+    const { date, type, price, payment_status, notes } = req.body;
     if (!date) return res.status(400).json({ ok: false, error: 'La fecha es obligatoria' });
+
+    // Calcular número de sesión automáticamente
+    const count = db.prepare(`SELECT COUNT(*) as c FROM sessions WHERE client_id = ?`).get(req.params.clientId);
+    const sessionNumber = count.c + 1;
+
+    const status = payment_status || 'Pagado';
+    const paid = status === 'Pagado' ? 1 : 0;
 
     const id = uuidv4();
     db.prepare(`
-      INSERT INTO sessions (id, client_id, date, type, price, paid, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(id, req.params.clientId, date, type || 'Sesión inicial', price || null, paid ? 1 : 0, notes || '');
+      INSERT INTO sessions (id, client_id, session_number, date, type, price, paid, payment_status, notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, req.params.clientId, sessionNumber, date, type || 'Sesión inicial',
+           price || null, paid, status, notes || '');
 
-    // Interacción automática
+    // Interacción automática de sistema
     db.prepare(`
       INSERT INTO interactions (id, client_id, type, direction, content)
       VALUES (?, ?, 'Sistema', 'Interno', ?)
-    `).run(uuidv4(), req.params.clientId, `Sesión registrada: ${type || 'Sesión inicial'} el ${date}. Precio: $${price || 0}.`);
+    `).run(uuidv4(), req.params.clientId,
+           `Sesión #${sessionNumber} registrada: ${type || 'Sesión inicial'} el ${date}. Precio: $${price || 0}. Estado: ${status}.`);
 
     const session = db.prepare(`SELECT * FROM sessions WHERE id = ?`).get(id);
     res.status(201).json({ ok: true, data: session });

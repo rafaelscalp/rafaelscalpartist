@@ -2,9 +2,9 @@
 
 let clientsData = [];
 let currentClientId = null;
-let currentDetailTab = 'info';
+let currentClientData = null;
 
-// ─── LISTA DE CLIENTES ────────────────────────────────────────────────────────
+// ─── LISTA ────────────────────────────────────────────────────────────────────
 
 async function loadClients(params = {}) {
   try {
@@ -19,19 +19,18 @@ function renderClientsList() {
   const grid = document.getElementById('clients-grid');
   if (!clientsData.length) {
     grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
-      <div class="empty-icon">👤</div>
-      <p>No hay clientes que coincidan con los filtros.</p>
+      <div class="empty-icon">👤</div><p>No hay clientes que coincidan.</p>
     </div>`;
     return;
   }
   grid.innerHTML = clientsData.map(c => `
     <div class="client-card" onclick="openClientDetail('${c.id}')">
       <div class="cc-actions">
-        <button class="btn btn-ghost btn-icon btn-sm" title="Editar" onclick="event.stopPropagation();openEditModal('${c.id}')">✏️</button>
-        <button class="btn btn-ghost btn-icon btn-sm" title="Eliminar" onclick="event.stopPropagation();deleteClient('${c.id}')">🗑</button>
+        <button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();openEditModal('${c.id}')">✏️</button>
+        <button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();deleteClient('${c.id}')">🗑</button>
       </div>
       <div class="cc-name">${c.name}</div>
-      <div class="cc-phone">${c.phone || 'Sin teléfono'} ${c.email ? '· ' + c.email : ''}</div>
+      <div class="cc-phone">${c.phone || 'Sin teléfono'} ${c.email ? '· '+c.email : ''}</div>
       <div class="cc-meta">
         ${tempBadge(c.temperature)}
         <span class="badge badge-origin">${c.origin}</span>
@@ -44,21 +43,19 @@ function renderClientsList() {
 }
 
 function applyClientsFilters() {
-  const stage       = document.getElementById('filter-stage').value;
-  const origin      = document.getElementById('filter-origin').value;
-  const temperature = document.getElementById('filter-temp').value;
-  const from        = document.getElementById('filter-from').value;
-  const to          = document.getElementById('filter-to').value;
-  const search      = document.getElementById('global-search').value;
-
   const params = {};
-  if (stage) params.stage = stage;
+  const stage  = document.getElementById('filter-stage').value;
+  const origin = document.getElementById('filter-origin').value;
+  const temp   = document.getElementById('filter-temp').value;
+  const from   = document.getElementById('filter-from').value;
+  const to     = document.getElementById('filter-to').value;
+  const search = document.getElementById('global-search').value;
+  if (stage)  params.stage = stage;
   if (origin) params.origin = origin;
-  if (temperature) params.temperature = temperature;
-  if (from) params.from = from;
-  if (to) params.to = to;
+  if (temp)   params.temperature = temp;
+  if (from)   params.from = from;
+  if (to)     params.to = to;
   if (search) params.search = search;
-
   loadClients(params);
 }
 
@@ -68,6 +65,7 @@ function openCreateModal() {
   currentClientId = null;
   document.getElementById('modal-form-title').textContent = 'Nuevo lead';
   document.getElementById('client-form').reset();
+  toggleMetaFields('Otro');
   document.getElementById('modal-form').classList.add('open');
 }
 
@@ -77,20 +75,30 @@ async function openEditModal(id) {
   try {
     const c = await api.leads.get(id);
     const f = document.getElementById('client-form');
-    f.elements['name'].value        = c.name || '';
-    f.elements['phone'].value       = c.phone || '';
-    f.elements['email'].value       = c.email || '';
-    f.elements['origin'].value      = c.origin || 'Otro';
-    f.elements['campaign'].value    = c.campaign || '';
-    f.elements['stage'].value       = c.stage || 'Nuevo';
-    f.elements['temperature'].value = c.temperature || 'Tibio';
-    f.elements['budget'].value      = c.budget || '';
-    f.elements['next_touch'].value  = c.next_touch || '';
-    f.elements['notes'].value       = c.notes || '';
+    f.elements['name'].value            = c.name || '';
+    f.elements['phone'].value           = c.phone || '';
+    f.elements['email'].value           = c.email || '';
+    f.elements['origin'].value          = c.origin || 'Otro';
+    f.elements['campaign'].value        = c.campaign || '';
+    f.elements['adset'].value           = c.adset || '';
+    f.elements['ad_name'].value         = c.ad_name || '';
+    f.elements['stage'].value           = c.stage || 'Nuevo';
+    f.elements['temperature'].value     = c.temperature || 'Tibio';
+    f.elements['budget'].value          = c.budget || '';
+    f.elements['next_touch'].value      = c.next_touch || '';
+    f.elements['initial_message'].value = c.initial_message || '';
+    f.elements['notes'].value           = c.notes || '';
+    toggleMetaFields(c.origin);
     document.getElementById('modal-form').classList.add('open');
   } catch (err) {
-    toast('Error cargando datos del cliente', 'error');
+    toast('Error cargando datos', 'error');
   }
+}
+
+function toggleMetaFields(origin) {
+  const show = origin === 'Meta';
+  document.getElementById('meta-extra-fields').classList.toggle('visible', show);
+  document.getElementById('meta-extra-fields-2').classList.toggle('visible', show);
 }
 
 function closeFormModal() {
@@ -101,17 +109,27 @@ function closeFormModal() {
 async function submitClientForm(e) {
   e.preventDefault();
   const f = e.target;
+
+  // Validación de teléfono
+  const phone = f.elements['phone'].value.trim();
+  const digits = phone.replace(/\D/g, '');
+  if (!phone) return toast('El teléfono es obligatorio', 'error');
+  if (digits.length < 8) return toast('El teléfono debe tener al menos 8 dígitos', 'error');
+
   const data = {
-    name:        f.elements['name'].value.trim(),
-    phone:       f.elements['phone'].value.trim(),
-    email:       f.elements['email'].value.trim(),
-    origin:      f.elements['origin'].value,
-    campaign:    f.elements['campaign'].value.trim(),
-    stage:       f.elements['stage'].value,
-    temperature: f.elements['temperature'].value,
-    budget:      parseFloat(f.elements['budget'].value) || null,
-    next_touch:  f.elements['next_touch'].value || null,
-    notes:       f.elements['notes'].value.trim(),
+    name:            f.elements['name'].value.trim(),
+    phone,
+    email:           f.elements['email'].value.trim(),
+    origin:          f.elements['origin'].value,
+    campaign:        f.elements['campaign'].value.trim(),
+    adset:           f.elements['adset'].value.trim(),
+    ad_name:         f.elements['ad_name'].value.trim(),
+    stage:           f.elements['stage'].value,
+    temperature:     f.elements['temperature'].value,
+    budget:          parseFloat(f.elements['budget'].value) || null,
+    next_touch:      f.elements['next_touch'].value || null,
+    initial_message: f.elements['initial_message'].value.trim() || null,
+    notes:           f.elements['notes'].value.trim(),
   };
 
   try {
@@ -136,23 +154,22 @@ async function deleteClient(id) {
   try {
     await api.leads.delete(id);
     toast('Cliente eliminado', 'success');
-    loadClients();
-    loadPipeline();
-    loadDashboard();
+    loadClients(); loadPipeline(); loadDashboard();
   } catch (err) {
     toast(err.message, 'error');
   }
 }
 
-// ─── DETALLE DE CLIENTE ───────────────────────────────────────────────────────
+// ─── DETALLE ──────────────────────────────────────────────────────────────────
 
 async function openClientDetail(id) {
   try {
     const c = await api.leads.get(id);
     currentClientId = id;
-    currentDetailTab = 'info';
+    currentClientData = c;
     renderDetailModal(c);
     document.getElementById('modal-detail').classList.add('open');
+    return c;
   } catch (err) {
     toast('Error cargando cliente', 'error');
   }
@@ -163,54 +180,57 @@ function closeDetailModal() {
 }
 
 function renderDetailModal(c) {
-  // Header
-  document.getElementById('detail-avatar').textContent   = initials(c.name);
-  document.getElementById('detail-name').textContent     = c.name;
-  document.getElementById('detail-sub').textContent      = [c.phone, c.email].filter(Boolean).join(' · ') || 'Sin contacto';
-  document.getElementById('detail-badges').innerHTML     = `
+  document.getElementById('detail-avatar').textContent = initials(c.name);
+  document.getElementById('detail-name').textContent   = c.name;
+  document.getElementById('detail-sub').textContent    =
+    [c.phone, c.email].filter(Boolean).join(' · ') || 'Sin contacto';
+
+  document.getElementById('detail-badges').innerHTML = `
     ${tempBadge(c.temperature)}
     <span class="badge badge-origin">${c.origin}</span>
     <span class="badge badge-stage">${c.stage}</span>
     ${c.campaign ? `<span class="badge" style="background:var(--bg-elevated);color:var(--text-muted)">📣 ${c.campaign}</span>` : ''}
   `;
-  document.getElementById('detail-edit-btn').onclick = () => { closeDetailModal(); openEditModal(c.id); };
+
+  document.getElementById('detail-edit-btn').onclick   = () => { closeDetailModal(); openEditModal(c.id); };
   document.getElementById('detail-delete-btn').onclick = () => { closeDetailModal(); deleteClient(c.id); };
 
-  // Tabs
-  switchDetailTab('info', c);
-}
+  renderInfoPanel(c);
+  renderTimelinePanel(c);
+  renderSessionsPanel(c);
+  renderPhotosPanel(c);
 
-function switchDetailTab(tab, clientData) {
-  currentDetailTab = tab;
-  document.querySelectorAll('.detail-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
-  document.querySelectorAll('.detail-panel').forEach(p => p.classList.toggle('active', p.dataset.panel === tab));
-
-  if (clientData) {
-    renderInfoPanel(clientData);
-    renderTimelinePanel(clientData);
-    renderSessionsPanel(clientData);
-    renderPhotosPanel(clientData);
-  }
+  activateTab('info');
 }
 
 function renderInfoPanel(c) {
+  const lastContact = c.last_contact_at
+    ? `${fmtDateTime(c.last_contact_at)} (${timeAgo(c.last_contact_at)})`
+    : `Nunca (ingresó ${timeAgo(c.created_at)})`;
+
   document.getElementById('panel-info').innerHTML = `
-    <div class="info-grid">
+    <div class="info-grid" style="margin-bottom:16px">
       <div class="info-item"><div class="lbl">Nombre</div><div class="val">${c.name}</div></div>
       <div class="info-item"><div class="lbl">Teléfono</div><div class="val">${c.phone || '—'}
         ${c.phone ? `<a href="https://wa.me/${c.phone.replace(/\D/g,'')}" target="_blank" style="color:var(--accent);margin-left:8px;font-size:12px">WhatsApp ↗</a>` : ''}
       </div></div>
       <div class="info-item"><div class="lbl">Email</div><div class="val">${c.email || '—'}</div></div>
-      <div class="info-item"><div class="lbl">Origen</div><div class="val">${c.origin}</div></div>
-      <div class="info-item"><div class="lbl">Campaña</div><div class="val">${c.campaign || '—'}</div></div>
+      <div class="info-item"><div class="lbl">Origen</div><div class="val">${c.origin}${c.campaign ? ` · ${c.campaign}` : ''}</div></div>
       <div class="info-item"><div class="lbl">Presupuesto</div><div class="val text-accent">${fmtCurrency(c.budget)}</div></div>
+      <div class="info-item"><div class="lbl">Último contacto</div><div class="val" style="color:${!c.last_contact_at ? 'var(--warning)' : 'inherit'}">${lastContact}</div></div>
+      <div class="info-item"><div class="lbl">Fecha de ingreso</div><div class="val">${fmtDateTime(c.created_at)}</div></div>
       <div class="info-item"><div class="lbl">Próximo contacto</div><div class="val">${c.next_touch ? fmtDate(c.next_touch) : '—'}</div></div>
-      <div class="info-item"><div class="lbl">Ingresó</div><div class="val">${fmtDateTime(c.created_at)}</div></div>
+      <div class="info-item"><div class="lbl">Fecha de retoque</div><div class="val">
+        ${c.next_retoque ? fmtDate(c.next_retoque) : '—'}
+        ${c.stage === 'Cliente activo' ? `<button class="btn btn-ghost btn-sm" style="margin-left:8px" onclick="editRetoque('${c.id}','${c.next_retoque||''}')">✏️</button>` : ''}
+      </div></div>
+      ${c.loss_reason ? `<div class="info-item"><div class="lbl">Motivo de pérdida</div><div class="val" style="color:var(--danger)">${c.loss_reason}</div></div>` : ''}
       <div class="info-item" style="grid-column:1/-1"><div class="lbl">Notas</div>
         <div class="val" style="color:var(--text-secondary);white-space:pre-wrap">${c.notes || '—'}</div>
       </div>
     </div>
-    <div style="margin-top:16px">
+
+    <div style="margin-bottom:16px">
       <div class="section-title">Cambiar etapa</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         ${['Nuevo','Contactado','Presupuestado','Sesión agendada','Cliente activo','Perdido'].map(s =>
@@ -219,7 +239,8 @@ function renderInfoPanel(c) {
         ).join('')}
       </div>
     </div>
-    <div style="margin-top:16px">
+
+    <div>
       <div class="section-title">Temperatura</div>
       <div style="display:flex;gap:8px">
         ${['Caliente','Tibio','Frío'].map(t =>
@@ -251,6 +272,14 @@ function renderTimelinePanel(c) {
     </div>
   `;
 
+  // Mensaje inicial destacado
+  const initialMsg = c.initial_message ? `
+    <div class="initial-message-box">
+      <div class="lbl">💬 Mensaje inicial del cliente</div>
+      <div class="msg">${c.initial_message}</div>
+    </div>
+  ` : '';
+
   const timeline = interactions.length ? interactions.map(i => `
     <div class="timeline-item">
       <div class="timeline-dot">${interactionIcon(i.type)}</div>
@@ -262,7 +291,7 @@ function renderTimelinePanel(c) {
     </div>
   `).join('') : '<div class="empty-state"><p>Sin interacciones aún.</p></div>';
 
-  document.getElementById('panel-timeline').innerHTML = addForm + `<div class="timeline">${timeline}</div>`;
+  document.getElementById('panel-timeline').innerHTML = addForm + initialMsg + `<div class="timeline">${timeline}</div>`;
 }
 
 function renderSessionsPanel(c) {
@@ -282,13 +311,15 @@ function renderSessionsPanel(c) {
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">Precio ($)</label>
+          <label class="form-label">Monto cobrado ($)</label>
           <input type="number" id="sess-price" class="form-input" placeholder="0">
         </div>
         <div class="form-group">
-          <label class="form-label">Pagado</label>
-          <select id="sess-paid" class="form-select">
-            <option value="1">Sí</option><option value="0">No</option>
+          <label class="form-label">Estado de pago</label>
+          <select id="sess-payment" class="form-select">
+            <option value="Pagado">Pagado</option>
+            <option value="Señado">Señado</option>
+            <option value="Pendiente">Pendiente</option>
           </select>
         </div>
       </div>
@@ -299,20 +330,33 @@ function renderSessionsPanel(c) {
     </div>
   `;
 
+  const totalPagado = sessions.filter(s => s.payment_status === 'Pagado').reduce((a, s) => a + (s.price || 0), 0);
+  const totalGeneral = sessions.reduce((a, s) => a + (s.price || 0), 0);
+
+  const resumen = sessions.length ? `
+    <div style="display:flex;gap:16px;margin-bottom:12px;font-size:13px">
+      <span>Total sesiones: <strong>${sessions.length}</strong></span>
+      <span>Cobrado: <strong style="color:var(--accent)">${fmtCurrency(totalPagado)}</strong></span>
+      ${totalGeneral > totalPagado ? `<span>Pendiente: <strong style="color:var(--danger)">${fmtCurrency(totalGeneral - totalPagado)}</strong></span>` : ''}
+    </div>
+  ` : '';
+
+  const statusColors = { 'Pagado': 'pay-pagado', 'Señado': 'pay-senado', 'Pendiente': 'pay-pendiente' };
+
   const list = sessions.length ? sessions.map(s => `
     <div class="session-item">
       <div>
-        <div class="session-date">${fmtDate(s.date)}</div>
+        <div class="session-date">Sesión #${s.session_number || '?'} — ${fmtDate(s.date)}</div>
         <div class="session-type">${s.type}</div>
       </div>
       <div style="text-align:right">
         <div class="session-price">${fmtCurrency(s.price)}</div>
-        <div class="session-paid">${s.paid ? '✓ Pagado' : 'Pendiente'}</div>
+        <div class="session-paid ${statusColors[s.payment_status] || ''}">${s.payment_status || (s.paid ? 'Pagado' : 'Pendiente')}</div>
       </div>
     </div>
   `).join('') : '<div class="empty-state"><p>Sin sesiones registradas.</p></div>';
 
-  document.getElementById('panel-sessions').innerHTML = addForm + `<div class="session-list">${list}</div>`;
+  document.getElementById('panel-sessions').innerHTML = addForm + resumen + `<div class="session-list">${list}</div>`;
 }
 
 function renderPhotosPanel(c) {
@@ -326,7 +370,6 @@ function renderPhotosPanel(c) {
       <button class="btn btn-secondary" onclick="document.getElementById('photo-file').click()">📎 Subir foto</button>
     </div>
   `;
-
   const grid = photos.length ? `<div class="photos-grid">${photos.map(p => `
     <div class="photo-item">
       <img src="/uploads/${p.filename}" alt="${p.type}" loading="lazy">
@@ -334,16 +377,20 @@ function renderPhotosPanel(c) {
       <button class="photo-del" onclick="deletePhoto('${p.id}','${c.id}')">✕</button>
     </div>
   `).join('')}</div>` : '<div class="empty-state"><p>Sin fotos aún.</p></div>';
-
   document.getElementById('panel-photos').innerHTML = uploadForm + grid;
 }
 
-// ─── ACCIONES DETALLE ─────────────────────────────────────────────────────────
+// ─── ACCIONES ─────────────────────────────────────────────────────────────────
 
 async function changeStage(id, stage) {
+  if (stage === 'Perdido') {
+    openLossModal(id, stage);
+    return;
+  }
   try {
     await api.leads.update(id, { stage });
     const c = await api.leads.get(id);
+    currentClientData = c;
     renderDetailModal(c);
     loadPipeline();
     toast(`Etapa: ${stage}`, 'success');
@@ -356,6 +403,7 @@ async function changeTemp(id, temperature) {
   try {
     await api.leads.update(id, { temperature });
     const c = await api.leads.get(id);
+    currentClientData = c;
     renderDetailModal(c);
     toast(`Temperatura: ${temperature}`, 'success');
   } catch (err) {
@@ -371,8 +419,9 @@ async function addInteraction(clientId) {
   try {
     await api.interactions.add(clientId, { type, direction: dir, content });
     const c = await api.leads.get(clientId);
+    currentClientData = c;
     renderDetailModal(c);
-    switchDetailTab('timeline', c);
+    activateTab('timeline');
     toast('Interacción guardada', 'success');
   } catch (err) {
     toast(err.message, 'error');
@@ -380,17 +429,18 @@ async function addInteraction(clientId) {
 }
 
 async function addSession(clientId) {
-  const date  = document.getElementById('sess-date').value;
-  const type  = document.getElementById('sess-type').value;
-  const price = parseFloat(document.getElementById('sess-price').value) || null;
-  const paid  = document.getElementById('sess-paid').value === '1';
-  const notes = document.getElementById('sess-notes').value.trim();
+  const date           = document.getElementById('sess-date').value;
+  const type           = document.getElementById('sess-type').value;
+  const price          = parseFloat(document.getElementById('sess-price').value) || null;
+  const payment_status = document.getElementById('sess-payment').value;
+  const notes          = document.getElementById('sess-notes').value.trim();
   if (!date) return toast('Ingresa una fecha', 'error');
   try {
-    await api.interactions.addSession(clientId, { date, type, price, paid, notes });
+    await api.interactions.addSession(clientId, { date, type, price, payment_status, notes });
     const c = await api.leads.get(clientId);
+    currentClientData = c;
     renderDetailModal(c);
-    switchDetailTab('sessions', c);
+    activateTab('sessions');
     toast('Sesión registrada', 'success');
     loadDashboard();
   } catch (err) {
@@ -405,8 +455,9 @@ async function uploadPhoto(clientId) {
   try {
     await api.photos.upload(clientId, file, type);
     const c = await api.leads.get(clientId);
+    currentClientData = c;
     renderDetailModal(c);
-    switchDetailTab('photos', c);
+    activateTab('photos');
     toast('Foto subida', 'success');
   } catch (err) {
     toast(err.message, 'error');
@@ -418,9 +469,84 @@ async function deletePhoto(photoId, clientId) {
   try {
     await api.photos.delete(photoId);
     const c = await api.leads.get(clientId);
+    currentClientData = c;
     renderDetailModal(c);
-    switchDetailTab('photos', c);
+    activateTab('photos');
     toast('Foto eliminada', 'success');
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+async function editRetoque(id, current) {
+  const val = prompt('Fecha estimada de retoque (AAAA-MM-DD):', current || '');
+  if (val === null) return;
+  try {
+    await api.leads.update(id, { next_retoque: val || null });
+    const c = await api.leads.get(id);
+    currentClientData = c;
+    renderDetailModal(c);
+    toast('Fecha de retoque actualizada', 'success');
+    loadDashboard();
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+function activateTab(tab) {
+  document.querySelectorAll('.detail-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.querySelectorAll('.detail-panel').forEach(p => p.classList.toggle('active', p.dataset.panel === tab));
+}
+
+// ─── MODAL MOTIVO DE PÉRDIDA ──────────────────────────────────────────────────
+
+let _lossClientId = null;
+let _lossStage = null;
+let _lossReason = null;
+
+function openLossModal(clientId, stage) {
+  _lossClientId = clientId;
+  _lossStage = stage;
+  _lossReason = null;
+  document.querySelectorAll('.loss-option').forEach(b => b.classList.remove('selected'));
+  document.getElementById('loss-reason-other').style.display = 'none';
+  document.getElementById('loss-reason-other').value = '';
+  document.getElementById('modal-loss').classList.add('open');
+}
+
+function selectLossReason(btn, reason) {
+  document.querySelectorAll('.loss-option').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  _lossReason = reason;
+  const otherInput = document.getElementById('loss-reason-other');
+  otherInput.style.display = reason === 'Otro' ? 'block' : 'none';
+}
+
+function cancelLoss() {
+  document.getElementById('modal-loss').classList.remove('open');
+  _lossClientId = null;
+  renderPipeline();
+}
+
+async function confirmLoss() {
+  if (!_lossReason) return toast('Seleccioná un motivo', 'error');
+  let reason = _lossReason;
+  if (reason === 'Otro') {
+    const other = document.getElementById('loss-reason-other').value.trim();
+    if (!other) return toast('Especificá el motivo', 'error');
+    reason = other;
+  }
+  try {
+    await api.leads.update(_lossClientId, { stage: 'Perdido', loss_reason: reason });
+    document.getElementById('modal-loss').classList.remove('open');
+    toast('Lead marcado como perdido', 'info');
+    loadPipeline();
+    loadDashboard();
+    if (currentClientId === _lossClientId) {
+      const c = await api.leads.get(_lossClientId);
+      currentClientData = c;
+      renderDetailModal(c);
+    }
   } catch (err) {
     toast(err.message, 'error');
   }
