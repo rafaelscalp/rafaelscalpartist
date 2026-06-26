@@ -13,6 +13,10 @@ module.exports = function(eleventyConfig) {
     return d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
   });
 
+  eleventyConfig.addFilter("fechaISO", function(date) {
+    return new Date(date).toISOString().split("T")[0];
+  });
+
   return {
     dir: {
       output: "_site",
