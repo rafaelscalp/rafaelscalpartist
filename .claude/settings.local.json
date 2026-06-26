@@ -43,7 +43,8 @@
       "Bash(sqlite3 crm.sqlite 'SELECT id, name, phone, email, origin, campaign, adset, ad_name, stage, temperature, budget, next_touch, initial_message, last_contact_at, next_retoque, loss_reason, notes, created_at FROM clients WHERE name='\\\\''Carlos Mendoza'\\\\'';')",
       "Bash(git commit -m 'Fix validación teléfono: remover required HTML para mostrar toast JS *)",
       "Bash(pkill -f \"node crm/server.js\")",
-      "Bash(mv \"/Users/rafaeloropeza/Desktop/Scalp/Pagina web/imagenes/LOGO \" \"/Users/rafaeloropeza/Desktop/Scalp/Pagina web/imagenes/LOGO\" && ls \"/Users/rafaeloropeza/Desktop/Scalp/Pagina web/imagenes/LOGO\")"
+      "Bash(mv \"/Users/rafaeloropeza/Desktop/Scalp/Pagina web/imagenes/LOGO \" \"/Users/rafaeloropeza/Desktop/Scalp/Pagina web/imagenes/LOGO\" && ls \"/Users/rafaeloropeza/Desktop/Scalp/Pagina web/imagenes/LOGO\")",
+      "WebFetch(domain:rafaelscalpartist.netlify.app)"
     ]
   }
 }

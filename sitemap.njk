@@ -5,18 +5,18 @@ eleventyExcludeFromCollections: true
 <?xml version="1.0" encoding="utf-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://rafaelscalpartist.netlify.app/</loc>
+    <loc>https://rafaelscalpartist.com/</loc>
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://rafaelscalpartist.netlify.app/blog/</loc>
+    <loc>https://rafaelscalpartist.com/blog/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   {% for post in collections.posts %}
   <url>
-    <loc>https://rafaelscalpartist.netlify.app{{ post.url }}</loc>
+    <loc>https://rafaelscalpartist.com{{ post.url }}</loc>
     <lastmod>{{ post.date | fechaISO }}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
