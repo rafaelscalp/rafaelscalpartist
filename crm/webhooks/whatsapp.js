@@ -8,13 +8,10 @@ const db         = require('../database/db');
 const { v4: uuidv4 } = require('uuid');
 const { sendHotLeadEmail } = require('../services/mailer');
 
-const twilioClient = twilio(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN
-);
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
-const WA_FROM = `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`;
+// Clientes creados lazy para tomar las env vars en runtime, no al cargar el módulo
+function getTwilio()    { return twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN); }
+function getAnthropic() { return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY }); }
+function getWAFrom()    { return `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`; }
 
 const SYSTEM_PROMPT = `Sos el asistente de Rafael Oropeza, especialista en micropigmentación capilar en Buenos Aires con más de 5 años de experiencia. Tu trabajo es responder consultas de clientes potenciales de forma profesional, cercana y directa.
 
@@ -102,7 +99,7 @@ ${client.initial_message ? `Primer mensaje: "${client.initial_message}"` : ''}
 `.trim();
 
     // Llamar a Claude
-    const aiResponse = await anthropic.messages.create({
+    const aiResponse = await getAnthropic().messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 300,
       system: SYSTEM_PROMPT + `\n\nContexto del lead:\n${clientContext}`,
@@ -114,8 +111,8 @@ ${client.initial_message ? `Primer mensaje: "${client.initial_message}"` : ''}
     const cleanReply = replyText.replace('[CALIENTE]', '').trim();
 
     // Enviar respuesta por WhatsApp
-    await twilioClient.messages.create({
-      from: WA_FROM,
+    await getTwilio().messages.create({
+      from: getWAFrom(),
       to: `whatsapp:${phone}`,
       body: cleanReply,
     });
