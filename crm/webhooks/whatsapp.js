@@ -2,14 +2,14 @@
 
 const express    = require('express');
 const router     = express.Router();
-const twilio     = require('twilio');
+const Twilio     = require('twilio').Twilio;
 const Anthropic  = require('@anthropic-ai/sdk');
 const db         = require('../database/db');
 const { v4: uuidv4 } = require('uuid');
 const { sendHotLeadEmail } = require('../services/mailer');
 
 // Clientes creados lazy para tomar las env vars en runtime, no al cargar el módulo
-function getTwilio()    { return twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN); }
+function getTwilio()    { return new Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN); }
 function getAnthropic() { return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY }); }
 function getWAFrom()    { return `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`; }
 

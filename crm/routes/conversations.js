@@ -2,7 +2,7 @@
 
 const express = require('express');
 const router  = express.Router();
-const twilio  = require('twilio');
+const Twilio  = require('twilio').Twilio;
 const db      = require('../database/db');
 const { v4: uuidv4 } = require('uuid');
 
@@ -66,7 +66,7 @@ router.post('/:clientId/send', async (req, res) => {
     const client = db.prepare(`SELECT * FROM clients WHERE id = ?`).get(req.params.clientId);
     if (!client) return res.status(404).json({ ok: false, error: 'Cliente no encontrado' });
 
-    const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+    const twilioClient = new Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
     const result = await twilioClient.messages.create({
       from: WA_FROM(),
       to: `whatsapp:${client.phone}`,
