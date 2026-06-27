@@ -32,6 +32,10 @@ app.get('*', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`\n🚀 Rafael Scalp CRM corriendo en http://localhost:${PORT}\n`);
+  console.log('[ENV CHECK] TWILIO_ACCOUNT_SID:', process.env.TWILIO_ACCOUNT_SID ? process.env.TWILIO_ACCOUNT_SID.substring(0,10) : 'UNDEFINED');
+  console.log('[ENV CHECK] TWILIO_AUTH_TOKEN:', process.env.TWILIO_AUTH_TOKEN ? 'SET' : 'UNDEFINED');
+  console.log('[ENV CHECK] ANTHROPIC_API_KEY:', process.env.ANTHROPIC_API_KEY ? 'SET' : 'UNDEFINED');
+  console.log('[ENV CHECK] Todas las vars:', Object.keys(process.env).filter(k => !k.includes('npm')).join(', '));
 
   // Iniciar cron de seguimientos automáticos
   try {
