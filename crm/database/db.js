@@ -64,6 +64,23 @@ db.exec(`
     created_at  TEXT DEFAULT (datetime('now'))
   );
 
+  -- Control de IA por lead: si ai_enabled=0, Rafael responde manualmente
+  CREATE TABLE IF NOT EXISTS wa_ai_control (
+    client_id   TEXT PRIMARY KEY REFERENCES clients(id) ON DELETE CASCADE,
+    ai_enabled  INTEGER DEFAULT 1,
+    updated_at  TEXT DEFAULT (datetime('now'))
+  );
+
+  -- Seguimientos automáticos pendientes
+  CREATE TABLE IF NOT EXISTS wa_followups (
+    id          TEXT PRIMARY KEY,
+    client_id   TEXT NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+    attempt     INTEGER DEFAULT 1,
+    scheduled_at TEXT NOT NULL,
+    sent_at     TEXT,
+    status      TEXT DEFAULT 'pending'
+  );
+
   CREATE TABLE IF NOT EXISTS meta_leads (
     id            TEXT PRIMARY KEY,
     client_id     TEXT REFERENCES clients(id),
@@ -88,6 +105,7 @@ const migrations = [
   { table: 'clients',  col: 'ad_name',         def: 'TEXT' },
   { table: 'sessions', col: 'session_number',  def: 'INTEGER' },
   { table: 'sessions', col: 'payment_status',  def: "TEXT DEFAULT 'Pagado'" },
+  { table: 'interactions', col: 'wa_message_sid', def: 'TEXT' },
 ];
 
 for (const { table, col, def } of migrations) {

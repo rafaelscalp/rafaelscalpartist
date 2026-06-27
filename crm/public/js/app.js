@@ -1,11 +1,12 @@
 // ─── APP PRINCIPAL ────────────────────────────────────────────────────────────
 
-const VIEWS = ['dashboard', 'pipeline', 'clients', 'agenda'];
+const VIEWS = ['dashboard', 'pipeline', 'clients', 'agenda', 'conversations'];
 const VIEW_TITLES = {
   dashboard: 'Dashboard',
   pipeline:  'Pipeline',
   clients:   'Clientes',
-  agenda:    'Agenda',
+  agenda:         'Agenda',
+  conversations:  'Conversaciones',
 };
 
 let currentView = 'dashboard';
@@ -30,7 +31,8 @@ function navigate(view) {
   if (view === 'dashboard') loadDashboard();
   if (view === 'pipeline')  loadPipeline();
   if (view === 'clients')   loadClients();
-  if (view === 'agenda')    loadAgenda();
+  if (view === 'agenda')         loadAgenda();
+  if (view === 'conversations')  loadConversations();
 }
 
 // ─── BÚSQUEDA GLOBAL — FILTROS DE VISTA ──────────────────────────────────────

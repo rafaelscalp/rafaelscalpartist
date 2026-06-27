@@ -53,4 +53,12 @@ const api = {
   export: {
     csvUrl: (params = {}) => BASE + '/export/csv?' + new URLSearchParams(params),
   },
+
+  // Conversaciones WhatsApp
+  conversations: {
+    list:       ()              => api.request('GET',   '/conversations'),
+    messages:   (clientId)     => api.request('GET',   `/conversations/${clientId}/messages`),
+    send:       (clientId, msg) => api.request('POST',  `/conversations/${clientId}/send`, { message: msg }),
+    toggleAI:   (clientId, on)  => api.request('PATCH', `/conversations/${clientId}/ai`, { ai_enabled: on }),
+  },
 };
