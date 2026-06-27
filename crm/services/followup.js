@@ -1,7 +1,7 @@
 // ─── SEGUIMIENTOS AUTOMÁTICOS (CRON) ─────────────────────────────────────────
 
 const cron   = require('node-cron');
-const Twilio = require('twilio').Twilio;
+const twilio = require('twilio');
 const db     = require('../database/db');
 const { v4: uuidv4 } = require('uuid');
 
@@ -21,7 +21,7 @@ function buildFollowupMsg(attempt, name) {
 async function processFollowups() {
   if (!process.env.TWILIO_ACCOUNT_SID) return;
 
-  const client = new Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+  const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
   const now = new Date().toISOString();
 
   const due = db.prepare(`
