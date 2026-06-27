@@ -2,6 +2,10 @@ try {
   const dotenv = require('dotenv');
   dotenv.config({ path: require('path').join(__dirname, '.env.production') });
   dotenv.config();
+  // Decodificar API key de Anthropic si está en base64
+  if (process.env.ANTHROPIC_API_KEY_B64 && !process.env.ANTHROPIC_API_KEY) {
+    process.env.ANTHROPIC_API_KEY = Buffer.from(process.env.ANTHROPIC_API_KEY_B64, 'base64').toString('utf8');
+  }
 } catch(e) {}
 const express = require('express');
 const cors    = require('cors');
