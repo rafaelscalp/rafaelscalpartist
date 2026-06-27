@@ -31,6 +31,8 @@ router.post('/', async (req, res) => {
 
   try {
     const { From, Body, MessageSid } = req.body;
+    console.log(`[WA] Mensaje recibido de ${From}: "${Body?.substring(0,30)}"`);
+    console.log(`[WA] ENV SID=${process.env.TWILIO_ACCOUNT_SID?.substring(0,8)} TOKEN=${process.env.TWILIO_AUTH_TOKEN ? 'SET' : 'MISSING'} NUM=${process.env.TWILIO_WHATSAPP_NUMBER}`);
     if (!From || !Body) return;
 
     // Normalizar número: "whatsapp:+5491144332211" → "+5491144332211"
