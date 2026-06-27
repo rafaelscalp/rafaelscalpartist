@@ -1,4 +1,8 @@
-try { require('dotenv').config(); } catch(e) {}
+try {
+  const dotenv = require('dotenv');
+  dotenv.config({ path: require('path').join(__dirname, '.env.production') });
+  dotenv.config();
+} catch(e) {}
 const express = require('express');
 const cors    = require('cors');
 const path    = require('path');
