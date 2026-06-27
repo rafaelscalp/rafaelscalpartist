@@ -3,15 +3,32 @@
 const express    = require('express');
 const router     = express.Router();
 const twilio     = require('twilio');
-const Anthropic  = require('@anthropic-ai/sdk');
 const db         = require('../database/db');
 const { v4: uuidv4 } = require('uuid');
 const { sendHotLeadEmail } = require('../services/mailer');
 
-// Clientes creados lazy para tomar las env vars en runtime, no al cargar el módulo
-function getTwilio()    { return twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN); }
-function getAnthropic() { return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY }); }
-function getWAFrom()    { return `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`; }
+function getTwilio() { return twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN); }
+function getWAFrom() { return `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`; }
+
+async function callClaude(messages, systemPrompt) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': process.env.ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 300,
+      system: systemPrompt,
+      messages,
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(JSON.stringify(data));
+  return data.content[0].text.trim();
+}
 
 const SYSTEM_PROMPT = `Sos el asistente de Rafael Oropeza, especialista en micropigmentación capilar en Buenos Aires con más de 5 años de experiencia. Tu trabajo es responder consultas de clientes potenciales de forma profesional, cercana y directa.
 
@@ -101,14 +118,7 @@ ${client.initial_message ? `Primer mensaje: "${client.initial_message}"` : ''}
 `.trim();
 
     // Llamar a Claude
-    const aiResponse = await getAnthropic().messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 300,
-      system: SYSTEM_PROMPT + `\n\nContexto del lead:\n${clientContext}`,
-      messages,
-    });
-
-    const replyText = aiResponse.content[0].text.trim();
+    const replyText = await callClaude(messages, SYSTEM_PROMPT + `\n\nContexto del lead:\n${clientContext}`);
     const isHot = replyText.includes('[CALIENTE]');
     const cleanReply = replyText.replace('[CALIENTE]', '').trim();
 
