@@ -250,29 +250,52 @@ router.post('/', async (req, res) => {
       WHERE client_id = ? AND status = 'pending'
     `).run(client.id);
 
-    // Obtener historial reciente (últimas 10 interacciones WA)
+    // Obtener historial reciente (últimas 20 interacciones WA — para memoria de conversaciones previas)
     const history = db.prepare(`
       SELECT direction, content FROM interactions
       WHERE client_id = ? AND type = 'WhatsApp'
-      ORDER BY created_at DESC LIMIT 10
+      ORDER BY created_at DESC LIMIT 20
     `).all(client.id).reverse();
+
+    const isFirstMessage = history.filter(h => h.direction === 'Entrante').length <= 1;
 
     // Construir mensajes para Claude
     const messages = history.map(h => ({
       role: h.direction === 'Entrante' ? 'user' : 'assistant',
       content: h.content,
     }));
-    // Asegurarse de que el último mensaje sea el actual (user)
     if (!messages.length || messages[messages.length - 1].role !== 'user') {
       messages.push({ role: 'user', content: msgText });
     }
 
+    // Detectar campaña desde el origen del lead
+    const origen = (client.origin || '').toLowerCase();
+    let campaniaContexto = '';
+    if (origen.includes('capacit') || origen.includes('curso') || origen.includes('formacion')) {
+      campaniaContexto = 'Este lead viene de una campaña de CAPACITACIÓN. Enfoca la conversación en el módulo B (profesionales).';
+    } else if (origen.includes('smp') || origen.includes('servicio') || origen.includes('cliente')) {
+      campaniaContexto = 'Este lead viene de una campaña de SERVICIOS SMP. Enfoca la conversación en el módulo A (clientes).';
+    }
+
+    // Verificar si es cliente que ya tuvo conversaciones previas
+    const totalMensajes = history.length;
+    const clienteConocido = totalMensajes > 2 && !isFirstMessage;
+    const nombreConocido = client.name && client.name !== client.phone ? client.name.split(' ')[0] : null;
+
     const clientContext = `
-Cliente: ${client.name !== client.phone ? client.name : 'Desconocido'}
+Cliente: ${nombreConocido || 'Desconocido'}
+Teléfono: ${client.phone}
 Etapa: ${client.stage}
 Temperatura: ${client.temperature}
-${client.initial_message ? `Primer mensaje: "${client.initial_message}"` : ''}
+Origen: ${client.origin || 'No especificado'}
+${campaniaContexto}
+${clienteConocido ? `IMPORTANTE: Este cliente ya ha tenido conversaciones previas contigo. Salúdalo como alguien conocido, menciona que lo recuerdas si es natural. No lo trates como si fuera la primera vez.` : ''}
+${client.initial_message ? `Primer mensaje histórico: "${client.initial_message}"` : ''}
 `.trim();
+
+    // Delay humano: 60s primer mensaje, 30s mensajes siguientes
+    const delay = isFirstMessage ? 60000 : 30000;
+    await new Promise(resolve => setTimeout(resolve, delay));
 
     // Llamar a Claude
     const replyText = await callClaude(messages, SYSTEM_PROMPT + `\n\nContexto del lead:\n${clientContext}`);
