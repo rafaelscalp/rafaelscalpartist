@@ -237,14 +237,26 @@ router.post('/', async (req, res) => {
   res.status(200).send('<Response></Response>');
 
   try {
-    const { From, Body, MessageSid } = req.body;
-    console.log(`[WA] Mensaje recibido de ${From}: "${Body?.substring(0,30)}"`);
-    console.log(`[WA] ENV SID=${process.env.TWILIO_ACCOUNT_SID?.substring(0,8)} TOKEN=${process.env.TWILIO_AUTH_TOKEN ? 'SET' : 'MISSING'} NUM=${process.env.TWILIO_WHATSAPP_NUMBER}`);
-    if (!From || !Body) return;
+    const { From, Body, MessageSid, NumMedia } = req.body;
+    const numMedia = parseInt(NumMedia || '0', 10);
+
+    // Construir URLs de imágenes si las hay
+    const mediaUrls = [];
+    for (let i = 0; i < numMedia; i++) {
+      const url = req.body[`MediaUrl${i}`];
+      const type = req.body[`MediaContentType${i}`];
+      if (url) mediaUrls.push({ url, type });
+    }
+
+    const hasMedia = mediaUrls.length > 0;
+    const hasText = Body && Body.trim().length > 0;
+
+    console.log(`[WA] Mensaje de ${From}: texto="${Body?.substring(0,30)}" media=${numMedia}`);
+    if (!From || (!hasText && !hasMedia)) return;
 
     // Normalizar número: "whatsapp:+5491144332211" → "+5491144332211"
     const phone = From.replace('whatsapp:', '');
-    const msgText = Body.trim();
+    const msgText = hasText ? Body.trim() : (hasMedia ? '[Foto]' : '');
 
     // Buscar o crear lead
     let client = db.prepare(
@@ -272,6 +284,15 @@ router.post('/', async (req, res) => {
       VALUES (?, ?, 'WhatsApp', 'Entrante', ?, ?)
     `).run(uuidv4(), client.id, msgText, MessageSid);
 
+    // Guardar fotos como interacciones separadas en el CRM
+    for (const media of mediaUrls) {
+      const label = media.type && media.type.startsWith('image') ? '📷 Foto' : '📎 Archivo';
+      db.prepare(`
+        INSERT INTO interactions (id, client_id, type, direction, content, wa_message_sid)
+        VALUES (?, ?, 'WhatsApp', 'Entrante', ?, ?)
+      `).run(uuidv4(), client.id, `${label}: ${media.url}`, MessageSid);
+    }
+
     // Verificar si la IA está habilitada para este lead
     const control = db.prepare(`SELECT ai_enabled FROM wa_ai_control WHERE client_id = ?`).get(client.id);
     const aiEnabled = control ? control.ai_enabled === 1 : true;
@@ -297,8 +318,20 @@ router.post('/', async (req, res) => {
       role: h.direction === 'Entrante' ? 'user' : 'assistant',
       content: h.content,
     }));
+
+    // Si el cliente mandó foto, el mensaje para Claude incluye esa info
+    let mensajeParaClaude = msgText;
+    if (hasMedia && !hasText) {
+      mensajeParaClaude = `[El cliente envió ${mediaUrls.length === 1 ? 'una foto' : `${mediaUrls.length} fotos`} de su cuero cabelludo para evaluación]`;
+    } else if (hasMedia && hasText) {
+      mensajeParaClaude = `${msgText} [El cliente también adjuntó ${mediaUrls.length === 1 ? 'una foto' : `${mediaUrls.length} fotos`}]`;
+    }
+
     if (!messages.length || messages[messages.length - 1].role !== 'user') {
-      messages.push({ role: 'user', content: msgText });
+      messages.push({ role: 'user', content: mensajeParaClaude });
+    } else {
+      // Actualizar el último mensaje con el contexto de foto
+      messages[messages.length - 1].content = mensajeParaClaude;
     }
 
     // Detectar campaña desde el origen del lead
