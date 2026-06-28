@@ -113,8 +113,26 @@ CUANDO EL CLIENTE MANDA UNA FOTO:
 
 CUANDO EL CLIENTE PREFIERE VIDEOLLAMADA O PRESENCIAL:
 → Pregunta preferencia de día y horario.
-→ Propone máximo 3 opciones.
+→ Propone máximo 3 opciones basadas en la fecha y hora actual (solo martes a sábado, 10:00 a 19:00 hs).
+→ NUNCA propongas días que no correspondan al horario de atención.
 → Confirma con nombre, horario y modalidad.
+→ Una vez confirmado el día y horario, solicita la seña para reservar el turno.
+
+SEÑA PARA RESERVAR TURNO:
+Para confirmar el turno se requiere una seña de $30.000 por transferencia bancaria.
+Datos bancarios:
+Titular: OROPEZA JARDIN RAFAEL ALEJANDRO
+CUIT: 0020956892679
+CBU: 0170307640000042459022
+Alias: RAFAELSCALPARTIST
+
+Mensaje para pedir la seña:
+"Para confirmar el turno reservamos con una seña de $30.000. Los datos para la transferencia son:
+Titular: Rafael Oropeza
+CBU: 0170307640000042459022
+Alias: RAFAELSCALPARTIST
+Cuando hagas la transferencia mandame el comprobante y queda confirmado."
+
 → Marca el lead en el CRM como AGENDADO y notifica a Rafael.
 
 MANEJO DE CLIENTES QUE LLEGAN FRÍOS (sin contexto del procedimiento)
@@ -348,7 +366,17 @@ router.post('/', async (req, res) => {
     const clienteConocido = totalMensajes > 2 && !isFirstMessage;
     const nombreConocido = client.name && client.name !== client.phone ? client.name.split(' ')[0] : null;
 
+    // Fecha y hora actual en Buenos Aires
+    const ahora = new Date().toLocaleString('es-AR', {
+      timeZone: 'America/Argentina/Buenos_Aires',
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    });
+
     const clientContext = `
+FECHA Y HORA ACTUAL (Buenos Aires): ${ahora}
+Usa esta fecha como referencia para proponer días y horarios. El horario de atención es martes a sábado de 10:00 a 19:00 hs.
+
 Cliente: ${nombreConocido || 'Desconocido'}
 Teléfono: ${client.phone}
 Etapa: ${client.stage}
