@@ -252,7 +252,8 @@ REGLAS ABSOLUTAS:
 - NUNCA intentes evaluar o diagnosticar una foto por tu cuenta — eso es tarea de Rafael.
 - Si no tienes información suficiente: "Eso lo responde Rafael directamente. ¿Lo coordinamos?"
 - Si el cliente menciona alopecia areata activa, quimioterapia u otras condiciones médicas en curso: responde con empatía e indica que Rafael necesita evaluar el caso antes de confirmar si puede proceder.
-- Si detectas que el cliente está listo para cerrar (pregunta precio con intención, quiere agendar, dice que se decide), incluye al final de tu respuesta la etiqueta: [CALIENTE]`;
+- Si detectas que el cliente está listo para cerrar (pregunta precio con intención, quiere agendar, dice que se decide), incluye al final de tu respuesta la etiqueta: [CALIENTE]
+- Si el cliente confirma que hizo la transferencia o manda un comprobante de pago, incluye al final de tu respuesta la etiqueta: [CERRADO]`;
 
 // ─── RECIBIR MENSAJE ENTRANTE ────────────────────────────────────────────────
 
@@ -401,10 +402,14 @@ ${client.initial_message ? `Primer mensaje histórico: "${client.initial_message
     const delay = isFirstMessage ? 60000 : 30000;
     await new Promise(resolve => setTimeout(resolve, delay));
 
+    // Detectar si el cliente mandó un comprobante de pago
+    const esPago = /comprobante|transferencia|pag[ué]|seña|deposit|recibo/i.test(msgText) || (hasMedia && history.some(h => /seña|turno|confirm/i.test(h.content)));
+
     // Llamar a Claude
     const replyText = await callClaude(messages, SYSTEM_PROMPT + `\n\nContexto del lead:\n${clientContext}`);
-    const isHot = replyText.includes('[CALIENTE]');
-    const cleanReply = replyText.replace('[CALIENTE]', '').trim();
+    const isHot = replyText.includes('[CALIENTE]') || esPago;
+    const isClosed = replyText.includes('[CERRADO]') || esPago;
+    const cleanReply = replyText.replace('[CALIENTE]', '').replace('[CERRADO]', '').trim();
 
     // Enviar respuesta por WhatsApp
     await getTwilio().messages.create({
@@ -418,6 +423,15 @@ ${client.initial_message ? `Primer mensaje histórico: "${client.initial_message
       INSERT INTO interactions (id, client_id, type, direction, content)
       VALUES (?, ?, 'WhatsApp', 'Saliente', ?)
     `).run(uuidv4(), client.id, cleanReply);
+
+    // Si hay comprobante de pago → mover a Cerrado
+    if (isClosed && client.stage !== 'Cerrado') {
+      db.prepare(`UPDATE clients SET stage = 'Cerrado', temperature = 'Caliente' WHERE id = ?`).run(client.id);
+      db.prepare(`
+        INSERT INTO interactions (id, client_id, type, direction, content)
+        VALUES (?, ?, 'Sistema', 'Interno', ?)
+      `).run(uuidv4(), client.id, 'Comprobante de pago recibido — lead movido a Cerrado automáticamente.');
+    }
 
     // Si Claude detectó [CALIENTE], actualizar temperatura y notificar
     if (isHot && client.temperature !== 'Caliente') {
