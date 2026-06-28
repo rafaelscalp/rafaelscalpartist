@@ -367,15 +367,19 @@ router.post('/', async (req, res) => {
     const nombreConocido = client.name && client.name !== client.phone ? client.name.split(' ')[0] : null;
 
     // Fecha y hora actual en Buenos Aires
-    const ahora = new Date().toLocaleString('es-AR', {
+    const now = new Date();
+    const bsAs = new Intl.DateTimeFormat('es-AR', {
       timeZone: 'America/Argentina/Buenos_Aires',
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
       hour: '2-digit', minute: '2-digit',
-    });
+    }).formatToParts(now);
+    const get = (type) => bsAs.find(p => p.type === type)?.value || '';
+    const ahora = `${get('weekday')} ${get('day')} de ${get('month')} de ${get('year')}, ${get('hour')}:${get('minute')} hs`;
 
     const clientContext = `
-FECHA Y HORA ACTUAL (Buenos Aires): ${ahora}
-Usa esta fecha como referencia para proponer días y horarios. El horario de atención es martes a sábado de 10:00 a 19:00 hs.
+FECHA Y HORA ACTUAL EN BUENOS AIRES: ${ahora}
+IMPORTANTE: Cuando propongas turnos, calculá los días correctamente a partir de esta fecha. Verificá siempre que el nombre del día (lunes, martes, etc.) coincida exactamente con el número de fecha. No mezcles el nombre del día con una fecha incorrecta. El horario de atención es martes a sábado de 10:00 a 19:00 hs. No ofrezcas domingos ni lunes.
+IMPORTANTE: NO digas que agendaste en Google Calendar ni que creaste un evento — esa integración no existe. Solo confirmá el turno por mensaje y decile al cliente que Rafael se va a contactar para confirmar.
 
 Cliente: ${nombreConocido || 'Desconocido'}
 Teléfono: ${client.phone}
