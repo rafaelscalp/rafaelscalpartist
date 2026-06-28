@@ -22,6 +22,27 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
+// ─── PROXY DE MEDIA TWILIO (para ver fotos de WhatsApp en el CRM) ────────────
+app.get('/api/media', async (req, res) => {
+  const { url } = req.query;
+  if (!url || !url.startsWith('https://api.twilio.com')) {
+    return res.status(400).send('URL inválida');
+  }
+  try {
+    const auth = Buffer.from(
+      `${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`
+    ).toString('base64');
+    const response = await fetch(url, { headers: { Authorization: `Basic ${auth}` } });
+    if (!response.ok) return res.status(response.status).send('Error al obtener media');
+    res.set('Content-Type', response.headers.get('content-type') || 'image/jpeg');
+    res.set('Cache-Control', 'private, max-age=86400');
+    const buf = await response.arrayBuffer();
+    res.send(Buffer.from(buf));
+  } catch (err) {
+    res.status(500).send('Error de proxy');
+  }
+});
+
 // ─── RUTAS API ───────────────────────────────────────────────────────────────
 app.use('/api/leads',          require('./routes/leads'));
 app.use('/api/interactions',   require('./routes/interactions'));

@@ -125,9 +125,24 @@ function renderMessage(m) {
   if (isSystem) {
     return `<div class="conv-msg-system">${m.content} · ${timeAgo(m.created_at)}</div>`;
   }
+
+  // Detectar si el contenido es una foto de Twilio
+  const fotoMatch = m.content && m.content.match(/📷 Foto: (https:\/\/api\.twilio\.com\S+)/);
+  let bubbleHtml;
+  if (fotoMatch) {
+    const proxyUrl = `/api/media?url=${encodeURIComponent(fotoMatch[1])}`;
+    bubbleHtml = `<img src="${proxyUrl}" alt="Foto del cliente"
+      style="max-width:220px;max-height:300px;border-radius:8px;cursor:pointer;display:block"
+      onclick="window.open('${proxyUrl}','_blank')"
+      onerror="this.outerHTML='<span style=color:#999>📷 Foto no disponible</span>'"
+    >`;
+  } else {
+    bubbleHtml = m.content;
+  }
+
   return `
     <div class="conv-msg ${isOutbound ? 'outbound' : 'inbound'}">
-      <div class="conv-msg-bubble">${m.content}</div>
+      <div class="conv-msg-bubble">${bubbleHtml}</div>
       <div class="conv-msg-time">${fmtDateTime(m.created_at)}</div>
     </div>
   `;
